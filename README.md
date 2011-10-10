@@ -21,7 +21,7 @@ FireFox 2-3
 * **Cookies**  
 Maximum size varies across implementations
 
-For more compatibility information, see: [http://caniuseit.com/](http://caniuseit.com/)
+For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 ## Usage
 
