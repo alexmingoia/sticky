@@ -5,7 +5,7 @@
  * MIT Licensed
  *
  * Simple JavaScript HTML5 browser storage cache.
- * Persists to Memory, IndexedDB, WebDB, localStorage, globalStorage, and cookies.
+ * Persists to memory, indexedDB, webSQL, localStorage, globalStorage, and cookies.
  *
  * Objects and arrays are stringified before storage in WebDB, localStorage, or cookies.
  * Strings longer than 128 characters aren't persisted to cookies.
@@ -39,10 +39,10 @@
  *      version: '1.0'
  *    };
  *
- *  @return {Sticky} Returns an instantiated store object
+ *  @return {StickyStore} Returns an instantiated store object
  */
 
-function Sticky(opts) {
+function StickyStore(opts) {
   var store = this;
   // Default options
   this.opts = (opts) ? opts : {};
@@ -91,6 +91,7 @@ function Sticky(opts) {
         };
         request.onerror = function(event) {
           console.log('Sticky Error: ' + request.errorCode);
+          store._triggerReady();
         };
       }
       else {
@@ -117,6 +118,7 @@ function Sticky(opts) {
     }
     request.onerror = function(event) {
       console.log('Sticky Error: ' + request.errorCode);
+      store._triggerReady();
     }
   }
   // Initialize WebDB and repopulate cache
@@ -144,6 +146,9 @@ function Sticky(opts) {
               }
               store._triggerReady();
             }
+            else {
+              store._triggerReady();
+            }
           });
         });
       }
@@ -151,6 +156,9 @@ function Sticky(opts) {
     catch (err) {
       console.log('Sticky Warning: ' + err);
     }
+  }
+  else {
+    this._triggerReady();
   }
 };
 
@@ -164,7 +172,7 @@ function Sticky(opts) {
  * @return Mixed Returns reference to stored value or false for failure or error
  */
 
-Sticky.prototype.set = (function(key, item) {
+StickyStore.prototype.set = (function(key, item) {
   if (!item) return false;
 
   var value;
@@ -241,7 +249,7 @@ Sticky.prototype.set = (function(key, item) {
  * @return Mixed Returns reference to stored value or false for failure or error
  */
 
-Sticky.prototype.get = (function(key) {
+StickyStore.prototype.get = (function(key) {
   // If cached, return value immediately.
   // Data inside webDB is loaded into the store on instantiation,
   // so it's available here.
@@ -285,7 +293,7 @@ Sticky.prototype.get = (function(key) {
  * @returns Bolean
  */
 
-Sticky.prototype.remove = (function(key) {
+StickyStore.prototype.remove = (function(key) {
   // Remove from memory
   if (this.cache[key]) {
     delete this.cache[key];

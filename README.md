@@ -32,7 +32,7 @@ For more compatibility information, see: [http://caniuseit.com/](http://caniusei
 #### JavaScript:
 
     // Initialize your store and repopulate cached data
-    var store = new Sticky();
+    var store = new StickyStore();
 
     // Set
     store.set('color', 'red');
@@ -47,11 +47,11 @@ For more compatibility information, see: [http://caniuseit.com/](http://caniusei
 
 First, you must create a sticky store object like so:
 
-    var store = new Sticky();
+    var store = new StickyStore();
 
 Alternatively, you can specify some options for this store by passing the opts argument:
 
-    var store = new Sticky({
+    var store = new StickyStore({
         domain: 'example.com', // Used for cookie domain.
         expires: 48,           // Hours. Used for cookie expiration.
         ready: function(){},   // Fires after cache has been repopulated.
@@ -66,7 +66,7 @@ When you initialize a store, it's cache will be repopulated from browser storage
 
 Returns the cached value or null if it isn't found. Example:
 
-    var store = new Sticky();
+    var store = new StickyStore();
 
     store.get('something');
 
@@ -74,7 +74,7 @@ Returns the cached value or null if it isn't found. Example:
 
 Caches a value and returns the cached value or false on error. You can pass any type of value: String, array, object, and number. Objects and arrays will be stringified and prefixed with ```J::O``` for storage.
 
-    var store = new Sticky();
+    var store = new StickyStore();
 
     store.set('car', {
         make: 'Volkswagen',
@@ -86,7 +86,7 @@ Caches a value and returns the cached value or false on error. You can pass any 
 
 Removes the cached value from all storage mechanisms and returns true if successful.
 
-    var store = new Sticky();
+    var store = new StickyStore();
 
     store.remove('something');
 
