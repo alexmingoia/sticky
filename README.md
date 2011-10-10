@@ -27,12 +27,15 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 #### HTML:
 
-    <script src="sticky-0.9.js" type="text/javascript"></script>
+    <script src="sticky-0.2.js" type="text/javascript"></script>
 
 #### JavaScript:
 
     // Initialize your store and repopulate cached data
-    var store = new StickyStore();
+    var store = new StickyStore({
+        name: 'Store A',
+        version: '1.0'
+    });
 
     // Set
     store.set('color', 'red');
@@ -52,15 +55,19 @@ First, you must create a sticky store object like so:
 Alternatively, you can specify some options for this store by passing the opts argument:
 
     var store = new StickyStore({
-        domain: 'example.com', // Used for cookie domain.
+        name: 'Store A',       // Unique identifier for this store. Required to use multiple stores.
+        version: '1.0',        // Version for this store.
+        ready: function() {},  // Fires after cache has been repopulated.
+        domain: 'example.com', // Custom cookie domain.
         expires: 48,           // Hours. Used for cookie expiration.
-        ready: function(){},   // Fires after cache has been repopulated.
-        size: 5,               // indexedDB / webSQL database size in megabytes.
-        version: '1.0'         // indexedDB / webSQL database version.
+        size: 5                // indexedDB / webSQL database size in megabytes.
     });
 
-When you initialize a store, it's cache will be repopulated from browser storage. Because indexedDB and webSQL operate asynchronously, Sticky will fire the ```store.opts.ready``` function after the cache has been repopulated.
+When you initialize a store, its cache will be repopulated from browser storage. Because indexedDB and webSQL operate asynchronously, Sticky will fire the ```store.opts.ready``` function after the cache has been repopulated.
 
+#### Multiple Stores
+
+Cached data is specific to a store's ```name``` and ```version``` options. Sticky supports multiple stores by prefixing the key values with the name and version.
 
 ### Get
 
@@ -84,11 +91,19 @@ Caches a value and returns the cached value or false on error. You can pass any 
 
 ### Remove
 
-Removes the cached value from all storage mechanisms and returns true if successful.
+Removes the cached value from this store from all storage mechanisms and returns true if successful.
 
     var store = new StickyStore();
 
     store.remove('something');
+
+### Remove All
+
+Removes all cached values for this store from all storage mechanisms.
+
+    var store = new StickyStore();
+
+    store.removeAll();
 
 ## License
 
