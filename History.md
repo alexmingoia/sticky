@@ -1,5 +1,9 @@
 # Release History
 
+## 0.3 / 2011-10-11
+
+* Fixed bug with indexedDB's continue and delete methods being reserved keywords causing Safari to throw errors
+
 ## 0.2 / 2011-10-10
 
 * Added ```store.opts.name``` to handle multiple stores by prefixing keys

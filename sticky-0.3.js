@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 0.2
+ * Version 0.3
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -52,7 +52,7 @@ function StickyStore(opts) {
   if (!opts.expires) opts.expires = 24*7; // Cookie expiration in hours
   if (!opts.name) opts.name = 'sticky';
   if (!opts.size) opts.size = 5; // Size in MB
-  if (!opts.version) opts.version = 604; // Version for DB
+  if (!opts.version) opts.version = '0.3'; // Version for DB
   if (opts.ready && typeof opts.ready !== 'function') {
       throw new Error('opts.ready must be a function');
   }
@@ -111,7 +111,7 @@ function StickyStore(opts) {
             else {
               store.set(cursor.key, cursor.value.data);
             }
-            cursor.continue();
+            cursor['continue']();
           }
           else {
             opts.ready && opts.ready.call(store);
@@ -338,7 +338,7 @@ StickyStore.prototype.remove = (function(key) {
 
   // Remove indexedDB
   if (this.indexedDB) {
-    this.indexedDB.objectStore('cache').delete(key);
+    this.indexedDB.objectStore('cache')['delete'](key);
   }
 
   return true;

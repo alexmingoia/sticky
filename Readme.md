@@ -19,7 +19,7 @@ Safari 4+, Mobile Safari (iPhone/iPad), Firefox 3.5+, Internet Explorer 8+ and C
 * **globalStorage**  
 FireFox 2-3
 * **Cookies**  
-Maximum size varies across implementations
+Usually 1-4KB per domain. Only strings that are less than 128 characters are persisted to cookies by Sticky.
 
 For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
@@ -27,7 +27,7 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 #### HTML:
 
-    <script src="sticky-0.2.js" type="text/javascript"></script>
+    <script src="sticky-0.3.js" type="text/javascript"></script>
 
 #### JavaScript:
 
