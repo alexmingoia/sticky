@@ -258,7 +258,7 @@ StickyStore.prototype.set = (function(key, item) {
  * @return Mixed Returns reference to stored value or false for failure or error
  */
 
-StickyStore.prototype.get = (function(key) {
+StickyStore.prototype.get = (function(key,defaultt) {
   // Prefix key with store name
   key = this.opts.name + this.opts.version + key;
 
@@ -293,7 +293,7 @@ StickyStore.prototype.get = (function(key) {
     }
   }
   // Not found
-  return false;
+  return defaultt || false;
 });
 
 
