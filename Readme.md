@@ -1,12 +1,16 @@
 # Sticky
 
-Sticky is a simple, key/value pair, browser-storage cache leveraging the latest HTML5 storage API's (indexedDB, webSQL, and localStorage).
+Sticky is a simple, key/value pair, browser-storage cache leveraging the latest HTML5 storage API's. Sticky persists to memory, indexedDB, webSQL, localStorage, globalStorage, and cookies. Objects and arrays are stringified before storage, and strings longer than 128 characters aren't persisted to cookies.
 
-Sticky persists to memory, indexedDB, webSQL, localStorage, globalStorage, and cookies.
+#### Features
 
-Objects and arrays are stringified before storage and strings longer than 128 characters aren't persisted to cookies.
+* Tiny and fast
+* Callbacks for everything
+* Store strings, numbers, and objects – JSON in and JSON out
+* Simple abstraction for IndexedDB and WebSQL's complexity
+* MIT licensed
 
-## Browser Support
+## Storage Mechanisms and Browser Support
 
 * **WebSQL (SQLite)**  
 Chrome 4+, Opera 10.5+, Safari 3.1+, and Android Browser 2.1+
@@ -27,15 +31,12 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 #### HTML:
 
-    <script src="sticky-0.3.js" type="text/javascript"></script>
+    <script src="sticky-0.4.js" type="text/javascript"></script>
 
 #### JavaScript:
 
     // Initialize your store and repopulate cached data
-    var store = new StickyStore({
-        name: 'Store A',
-        version: '1.0'
-    });
+    var store = new StickyStore();
 
     // Set
     store.set('color', 'red');
@@ -65,7 +66,7 @@ Alternatively, you can specify some options for this store by passing the opts a
 
 When you initialize a store, its cache will be repopulated from browser storage. Because indexedDB and webSQL operate asynchronously, Sticky will fire the ```store.opts.ready``` function after the cache has been repopulated.
 
-#### Multiple Stores
+### Multiple Stores
 
 Cached data is specific to a store's ```name``` and ```version``` options. Sticky supports multiple stores by prefixing the key values with the name and version.
 
@@ -73,15 +74,29 @@ Cached data is specific to a store's ```name``` and ```version``` options. Stick
 
 Returns the cached value or null if it isn't found. Example:
 
-    var store = new StickyStore();
+    store.get('something'); // Returns "bar" or false
 
-    store.get('something');
+You can also specify a default value for failure:
+
+    store.get('something', 'not there'); // Returns "not there" instead of false
+
+And callbacks!
+
+    store.get('something', callback(val) {
+        console.log(val);
+    });
 
 ### Set
 
-Caches a value and returns the cached value or false on error. You can pass any type of value: String, array, object, and number. Objects and arrays will be stringified and prefixed with ```J::O``` for storage.
+Caches a value and returns the cached value or false on error. You can pass any type of value: String, array, object, and number. Objects and arrays will be stringified and prefixed with ```J::O``` for storage. String values longer than 128 characters will not be persisted to cookies.
 
-    var store = new StickyStore();
+You can set strings or numbers:
+
+    store.set('color', 'red');
+
+    store.set('version', 5);
+
+Or objects:
 
     store.set('car', {
         make: 'Volkswagen',
@@ -89,19 +104,21 @@ Caches a value and returns the cached value or false on error. You can pass any 
         year: 2001
     });
 
+You can also specify a callback:
+
+    store.set('color', 'red', function(val) {
+        console.log(val); // Outputs "red"
+    });
+
 ### Remove
 
-Removes the cached value from this store from all storage mechanisms and returns true if successful.
-
-    var store = new StickyStore();
+Removes the cached value from this store from all storage mechanisms and returns true if successful. ```remove``` also takes an optional callback function as the second argument.
 
     store.remove('something');
 
 ### Remove All
 
-Removes all cached values for this store from all storage mechanisms.
-
-    var store = new StickyStore();
+Removes all cached values for this store from all storage mechanisms. ```removeAll``` also takes an optional callback function as the second argument.
 
     store.removeAll();
 

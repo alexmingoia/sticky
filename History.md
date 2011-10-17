@@ -1,5 +1,11 @@
 # Release History
 
+## 0.4 / 2011-10-16
+
+* Added callbacks
+* Added default value for store.get()
+* Added browser-specific detection of indexedDB
+
 ## 0.3 / 2011-10-11
 
 * Fixed bug with indexedDB's continue and delete methods being reserved keywords causing Safari to throw errors
