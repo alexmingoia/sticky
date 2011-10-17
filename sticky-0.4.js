@@ -1,15 +1,15 @@
 /**
  * Sticky
  *
- * Version 0.3
+ * Version 0.4
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
- * Simple JavaScript HTML5 browser storage cache.
- * Persists to memory, indexedDB, webSQL, localStorage, globalStorage, and cookies.
+ * Simple JavaScript HTML5 browser storage cache. Persists to
+ * memory, indexedDB, webSQL, localStorage, globalStorage, and cookies.
  *
- * Objects and arrays are stringified before storage in WebDB, localStorage, or cookies.
- * Strings longer than 128 characters aren't persisted to cookies.
+ * Objects and arrays are stringified before storage, and
+ * strings longer than 128 characters aren't persisted to cookies.
  *
  * WebSQL (SQLite)
  *     Chrome 4+, Opera 10.5+, Safari 3.1+, and Android Browser 2.1+
@@ -22,7 +22,7 @@
  * globalStorage
  *     FireFox 2-3
  * Cookies
- *     Maximum size varies across implementations
+ *     1-4KB depending on character encoding and implementation.
  *
  * For more compatibility information, see: http://caniuse.com/
  */
@@ -52,15 +52,14 @@ function StickyStore(opts) {
   if (!opts.expires) opts.expires = 24*7; // Cookie expiration in hours
   if (!opts.name) opts.name = 'sticky';
   if (!opts.size) opts.size = 5; // Size in MB
-  if (!opts.version) opts.version = '0.3'; // Version for DB
+  if (!opts.version) opts.version = '0.4'; // Version for DB
   if (opts.ready && typeof opts.ready !== 'function') {
-      throw new Error('opts.ready must be a function');
+      throw new Error('opts.ready callback must be a function');
   }
 
   this.opts = opts;
   this.cache = {}; // Memory cache container object
-  this.SQLite; // WebDB connection object
-  this.indexedDB // Indexed DB request object
+  this.db; // Indexed DB or Web SQL connection object
 
   // Wrap localStorage and globalStorage
   if (window.localStorage) {
@@ -74,18 +73,25 @@ function StickyStore(opts) {
   var store = this;
 
   // Initialize IndexedDB and repopulate cache
+  if ('webkitIndexedDB' in window) {
+     window.indexedDB = window.webkitIndexedDB;
+     window.IDBTransaction = window.webkitIDBTransaction;
+  }
+  else if ('mozIndexedDB' in window) {
+     window.indexedDB = window.mozIndexedDB;
+  }
   if (window.indexedDB) {
     // Request DB
     var request = window.indexedDB.open(opts.name, 'Sticky Offline Web Cache');
     request.onsuccess = function(event) {
-      store.indexedDB = event.result;
+      store.db = event.target.result;
       // If version is different, we need to set version
       // and create an object store
-      if (store.indexedDB.version != opts.version) {
-        var request = store.indexedDB.setVersion(opts.version);
+      if (store.db.version != opts.version) {
+        var request = store.db.setVersion(opts.version);
         request.onsuccess = function(event) {
           // Create our object store for cached data
-          var objectStore = db.createObjectStore('cache', {'keyPath': 'key'});
+          var objectStore = store.db.createObjectStore('cache');
           opts.ready && opts.ready.call(store);
         };
         request.onerror = function(event) {
@@ -94,7 +100,7 @@ function StickyStore(opts) {
         };
       }
       else {
-        var objectStore = store.indexedDB.transaction('cache').objectStore('cache');
+        var objectStore = store.db.transaction('cache').objectStore('cache');
         objectStore.openCursor().onsuccess = function(event) {
           var cursor = event.target.result;
           // Only load records for this specific store
@@ -128,9 +134,9 @@ function StickyStore(opts) {
   else if (window.openDatabase) {
     // Try and open DB
     try {
-      this.SQLite = window.openDatabase(opts.name, opts.version, 'Sticky Offline Web Cache', (opts.size * 1024 * 1024));
-      if (this.SQLite) {
-        this.SQLite.transaction(function(tx) {
+      this.db = window.openDatabase(opts.name, opts.version, 'Sticky Offline Web Cache', (opts.size * 1024 * 1024));
+      if (this.db) {
+        this.db.transaction(function(tx) {
           tx.executeSql('CREATE TABLE IF NOT EXISTS cache (key TEXT, data TEXT)');
           // Repopulate cache container object with data stored in SQLite
           tx.executeSql('SELECT * FROM cache', [], function(tx, results) {
@@ -177,15 +183,20 @@ function StickyStore(opts) {
  *
  * @param String key
  * @param Mixed value
+ * @param Function callback Optional. Called after async operations are completed.
  *
  * @return Mixed Returns reference to stored value or false for failure or error
  */
 
-StickyStore.prototype.set = (function(key, item) {
+StickyStore.prototype.set = (function(key, item, callback) {
   if (!item) return false;
+  if (callback && typeof callback !== 'function') {
+    throw new Error('Callback must be a function');
+    return false;
+  }
 
   // Prefix key with store name/identifier
-  key = this.opts.name + this.opts.version + key;
+  key = (this.opts.name + this.opts.version + key).replace(/[^\w]/gi, '');
 
   var value;
   var itemType = typeof item;
@@ -224,24 +235,43 @@ StickyStore.prototype.set = (function(key, item) {
       }
     }
 
-    // Copy value to webDB
-    if (this.SQLite) {
-      // Try insert first
-      var insert = function(tx, error) {
-        if (error && error.rowsAffected === 0) {
-          tx.executeSql('INSERT INTO cache (key, data) VALUES (?, ?)', [key, value]);
+    if (this.db) {
+      var store = this; // Context for callback
+      if (this.db.setVersion) {
+        // Copy value to indexedDB
+        var tx = this.db.transaction(['cache'], IDBTransaction.READ_WRITE, 0);
+        var objStore = tx.objectStore('cache');
+        var request = objStore.put(value, key);
+        request.onsuccess = function(e) {
+          callback && callback.call(store, item);
+        };
+        request.onerror = function(e) {
+          callback && callback.call(store, false);
+        };
+      }
+      // Copy value to webDB
+      else {
+        // Insert callback after update
+        var insert = function(tx, error) {
+          // If update failed then insert
+          if (error && error.rowsAffected === 0) {
+            tx.executeSql('INSERT INTO cache (key, data) VALUES (?, ?)', [key, value], function(tx, rs) {
+              callback && callback.call(store, item);
+            });
+          }
+          else {
+            callback && callback.call(store, item);
+          }
         }
+        // Update, and pass insert as callback
+        var update = function(tx) {
+          tx.executeSql('UPDATE cache SET data=? WHERE key=?', [value, key], insert);
+        }
+        this.db.transaction(update);
       }
-      // Update if insert fails
-      var update = function(tx) {
-        tx.executeSql('UPDATE cache SET data=? WHERE key=?', [value, key], insert);
-      }
-      this.SQLite.transaction(update);
     }
-
-    // Copy value to indexedDB
-    if (this.indexedDB) {
-      this.indexedDB.objectStore('cache').add({'key': key, 'value': value});
+    else {
+      callback && callback.call(this, item);
     }
 
     return this.cache[key];
@@ -254,46 +284,58 @@ StickyStore.prototype.set = (function(key, item) {
  * Get
  *
  * @param String key
+ * @param Mixed default/callback Optional. Anything but a function will be used as the default return falue.
  *
  * @return Mixed Returns reference to stored value or false for failure or error
  */
 
-StickyStore.prototype.get = (function(key) {
-  // Prefix key with store name
-  key = this.opts.name + this.opts.version + key;
+StickyStore.prototype.get = (function(key, callback) {
+  var _default = null;
 
-  // If cached, return value immediately.
+  // Prefix key with store name
+  key = (this.opts.name + this.opts.version + key).replace(/[^\w]/gi, '');
+
+  // Not in memory, let's check elsewhere
+  if (!this.cache[key]) {
+    // Check localStorage or globalStorage
+    if (this.storage) {
+      var value = this.storage.getItem(key);
+      if (value && value.substr(0, 4) === 'J::O') {
+        value = JSON.parse(value.substr(4));
+      }
+      this.cache[key] = value;
+    }
+    // If not, check cookies
+    else {
+      var keyEquals = key + "=";
+      var cookieArray = document.cookie.split(';');
+      for (var i=0; i<cookieArray.length; i++) {
+        var cookie = cookieArray[i];
+        while (cookie.charAt(0) === ' ') {
+          cookie = cookie.substring(1, cookie.length);
+        }
+        if (cookie.indexOf(keyEquals) === 0) {
+          this.cache[key] = cookie.substring(keyEquals.length, cookie.length);
+        }
+      }
+    }
+  }
+  // Callback
+  if (callback) {
+    if (typeof callback === 'function') {
+      callback.call(this, this.cache[key]);
+    }
+    else {
+      _default = callback;
+    }
+  }
   // Data inside webDB is loaded into the store on instantiation,
   // so it's available here.
   if (this.cache[key]) {
     return this.cache[key];
   }
-  // Check localStorage or globalStorage
-  if (this.storage) {
-    var value = this.storage.getItem(key);
-    if (value && value.substr(0, 4) === 'J::O') {
-      value = JSON.parse(value.substr(4));
-    }
-    this.cache[key] = value;
-    return this.cache[key];
-  }
-  // If not, check cookies
-  else {
-    var keyEquals = key + "=";
-    var cookieArray = document.cookie.split(';');
-    for (var i=0; i<cookieArray.length; i++) {
-      var cookie = cookieArray[i];
-      while (cookie.charAt(0) === ' ') {
-        cookie = cookie.substring(1, cookie.length);
-      }
-      if (cookie.indexOf(keyEquals) === 0) {
-        this.cache[key] = cookie.substring(keyEquals.length, cookie.length);
-        return this.cache[key];
-      }
-    }
-  }
   // Not found
-  return false;
+  return _default;
 });
 
 
@@ -301,13 +343,19 @@ StickyStore.prototype.get = (function(key) {
  * Remove
  *
  * @param String key
+ * @param Function callback Optional. Executed after async operations are complete.
  *
  * @returns Bolean
  */
 
-StickyStore.prototype.remove = (function(key) {
+StickyStore.prototype.remove = (function(key, callback) {
+  if (callback && typeof callback !== 'function') {
+    throw new Error('Callback must be a function');
+    return false;
+  }
+
   // Prefix key with store name
-  key = this.opts.name + this.opts.version + key;
+  key = (this.opts.name + this.opts.version + key).replace(/[^\w]/gi, '');
 
   // Remove from memory
   if (this.cache[key]) {
@@ -328,17 +376,26 @@ StickyStore.prototype.remove = (function(key) {
     }
   }
 
-  // Remove web SQL
-  if (this.SQLite) {
-    // Update if insert fails
-    this.SQLite.transaction(function(tx) {
-      tx.executeSql('DELETE FROM cache WHERE key=?', [key]);
-    });
+  if (this.db) {
+    // Keep context for callback
+    var store = this;
+    // Remove indexedDB
+    if (this.db.setVersion) {
+      this.db.objectStore('cache')['delete'](key).onsuccess(function(e) {
+        callback && callback.call(store);
+      });
+    }
+    // Remove web SQL
+    else {
+      this.db.transaction(function(tx) {
+        tx.executeSql('DELETE FROM cache WHERE key=?', [key], function(tx, rs) {;
+          callback && callback.call(store);
+        });
+      });
+    }
   }
-
-  // Remove indexedDB
-  if (this.indexedDB) {
-    this.indexedDB.objectStore('cache')['delete'](key);
+  else {
+    callback && callback.call(this);
   }
 
   return true;
@@ -348,13 +405,19 @@ StickyStore.prototype.remove = (function(key) {
 /**
  * Remove All
  *
+ * @param Function callback Optional
+ *
  * Removes all values in this store from all storage mechanisms
  */
 
-StickyStore.prototype.removeAll = (function() {
+StickyStore.prototype.removeAll = (function(callback) {
   var store = this;
 
   for (var key in store.cache) {
     store.remove(key);
+  }
+
+  if (callback && typeof callback === 'function') {
+    callback.call(this, this.cache[key]);
   }
 });
