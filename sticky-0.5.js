@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 0.4
+ * Version 0.5
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -52,7 +52,7 @@ function StickyStore(opts) {
   if (!opts.expires) opts.expires = 24*7; // Cookie expiration in hours
   if (!opts.name) opts.name = 'sticky';
   if (!opts.size) opts.size = 5; // Size in MB
-  if (!opts.version) opts.version = '0.4'; // Version for DB
+  if (!opts.version) opts.version = '0.5'; // Version for DB
   if (opts.ready && typeof opts.ready !== 'function') {
       throw new Error('opts.ready callback must be a function');
   }
@@ -91,7 +91,9 @@ function StickyStore(opts) {
         var request = store.db.setVersion(opts.version);
         request.onsuccess = function(event) {
           // Create our object store for cached data
-          var objectStore = store.db.createObjectStore('cache');
+          if (!store.db.objectStoreNames.contains('cache')) {
+              store.db.createObjectStore('cache');
+          }
           opts.ready && opts.ready.call(store);
         };
         request.onerror = function(event) {
@@ -134,7 +136,7 @@ function StickyStore(opts) {
   else if (window.openDatabase) {
     // Try and open DB
     try {
-      this.db = window.openDatabase(opts.name, opts.version, 'Sticky Offline Web Cache', (opts.size * 1024 * 1024));
+      this.db = window.openDatabase(opts.name, '1.0.0', 'Sticky Offline Web Cache', (opts.size * 1024 * 1024));
       if (this.db) {
         this.db.transaction(function(tx) {
           tx.executeSql('CREATE TABLE IF NOT EXISTS cache (key TEXT, data TEXT)');
@@ -170,6 +172,7 @@ function StickyStore(opts) {
     }
     catch (err) {
       console.log('Sticky Warning: ' + err);
+      opts.ready && opts.ready.call(store);
     }
   }
   else {
@@ -222,7 +225,6 @@ StickyStore.prototype.set = (function(key, item, callback) {
     if (value.length < 128) {
       document.cookie = key + '=' + value
         + '; expires=' + new Date(new Date().getTime() + (this.opts.expires*60*60*1000)).toGMTString()
-        + '; domain=' + this.opts.domain
         + '; path=/';
     }
     // Copy value to localStorage or globalStorage
@@ -241,7 +243,8 @@ StickyStore.prototype.set = (function(key, item, callback) {
         // Copy value to indexedDB
         var tx = this.db.transaction(['cache'], IDBTransaction.READ_WRITE, 0);
         var objStore = tx.objectStore('cache');
-        var request = objStore.put(value, key);
+        var obj = {'key':key, 'value':value};
+        var request = objStore.put(obj);
         request.onsuccess = function(e) {
           callback && callback.call(store, item);
         };
@@ -363,7 +366,7 @@ StickyStore.prototype.remove = (function(key, callback) {
   }
 
   // Remove cookie
-  document.cookie = key + '=; expires=-1; domain=' + this.opts.domain + '; path=/';
+  document.cookie = key + '=; expires=-1; path=/';
 
   // Remove localStorage or globalStorage
   if (this.storage) {
@@ -381,9 +384,16 @@ StickyStore.prototype.remove = (function(key, callback) {
     var store = this;
     // Remove indexedDB
     if (this.db.setVersion) {
-      this.db.objectStore('cache')['delete'](key).onsuccess(function(e) {
-        callback && callback.call(store);
-      });
+      // Copy value to indexedDB
+      var tx = this.db.transaction(['cache'], IDBTransaction.READ_WRITE, 0);
+      var objStore = tx.objectStore('cache');
+      var request = objStore['delete'](key);
+      request.onsuccess = function(e) {
+        callback && callback.call(store, true);
+      };
+      request.onerror = function(e) {
+        callback && callback.call(store, false);
+      };
     }
     // Remove web SQL
     else {
