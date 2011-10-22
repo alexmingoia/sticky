@@ -1,5 +1,11 @@
 # Release History
 
+## 0.5 / 2011-10-21
+
+* Fixed bug with webSQL versions
+* Fixed bug with storing objects in indexedDB
+* Updated documentation
+
 ## 0.4 / 2011-10-16
 
 * Added callbacks

@@ -31,7 +31,7 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 #### HTML:
 
-    <script src="sticky-0.4.js" type="text/javascript"></script>
+    <script src="sticky-0.5.js" type="text/javascript"></script>
 
 #### JavaScript:
 
@@ -74,7 +74,7 @@ Cached data is specific to a store's ```name``` and ```version``` options. Stick
 
 Returns the cached value or null if it isn't found. Example:
 
-    store.get('something'); // Returns "bar" or false
+    store.get('something');
 
 You can also specify a default value for failure:
 
