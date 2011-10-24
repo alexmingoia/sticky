@@ -244,7 +244,7 @@ StickyStore.prototype.set = (function(key, item, callback) {
         var tx = this.db.transaction(['cache'], IDBTransaction.READ_WRITE, 0);
         var objStore = tx.objectStore('cache');
         var obj = {'key':key, 'value':value};
-        var request = objStore.put(obj);
+        var request = objStore.put(obj, obj.key);
         request.onsuccess = function(e) {
           callback && callback.call(store, item);
         };
