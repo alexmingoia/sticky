@@ -1,5 +1,9 @@
 # Release History
 
+## 0.6 / 2011-10-24
+
+* Fixed bug with key reference for ObjectStore.put()
+
 ## 0.5 / 2011-10-21
 
 * Fixed bug with webSQL versions
