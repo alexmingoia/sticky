@@ -1,5 +1,10 @@
 # Release History
 
+## 0.7 / 2011-11-01
+
+* Removed versioning of stores due to too many idiosyncracies
+* Fixed bug with repopulating previous sessions data using indexedDB
+
 ## 0.6 / 2011-10-24
 
 * Fixed bug with key reference for ObjectStore.put()

@@ -31,7 +31,7 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 #### HTML:
 
-    <script src="sticky-0.6.js" type="text/javascript"></script>
+    <script src="sticky-0.7.js" type="text/javascript"></script>
 
 #### JavaScript:
 
@@ -57,7 +57,6 @@ Alternatively, you can specify some options for this store by passing the opts a
 
     var store = new StickyStore({
         name: 'Store A',       // Unique identifier for this store. Required to use multiple stores.
-        version: '1.0',        // Version for this store.
         ready: function() {},  // Fires after cache has been repopulated.
         domain: 'example.com', // Custom cookie domain.
         expires: 48,           // Hours. Used for cookie expiration.
@@ -68,7 +67,7 @@ When you initialize a store, its cache will be repopulated from browser storage.
 
 ### Multiple Stores
 
-Cached data is specific to a store's ```name``` and ```version``` options. Sticky supports multiple stores by prefixing the key values with the name and version.
+Cached data is specific to a store's ```name``` option. Sticky supports multiple stores by prefixing the key values with the name.
 
 ### Get
 
