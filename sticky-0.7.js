@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 0.6
+ * Version 0.7
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -38,8 +38,7 @@
  *      domain: 'example.com',   // Custom cookie domain
  *      expires: 168,            // Cookie expiration in hours
  *      ready: function() {},    // Fires after repopulating cache
- *      size: 10,                // WebSQL database size in megabytes
- *      version: '1.0'           // Version for this store
+ *      size: 10                 // WebSQL database size in megabytes
  *    };
  *
  *  @return {StickyStore} Returns an instantiated store object
@@ -52,7 +51,6 @@ function StickyStore(opts) {
   if (!opts.expires) opts.expires = 24*7; // Cookie expiration in hours
   if (!opts.name) opts.name = 'sticky';
   if (!opts.size) opts.size = 5; // Size in MB
-  if (!opts.version) opts.version = '0.6'; // Version for DB
   if (opts.ready && typeof opts.ready !== 'function') {
       throw new Error('opts.ready callback must be a function');
   }
@@ -82,17 +80,17 @@ function StickyStore(opts) {
   }
   if (window.indexedDB) {
     // Request DB
-    var request = window.indexedDB.open(opts.name, 'Sticky Offline Web Cache');
+    var request = window.indexedDB.open(opts.name+'_sticky', 'Sticky Offline Web Cache');
     request.onsuccess = function(event) {
       store.db = event.target.result;
       // If version is different, we need to set version
       // and create an object store
-      if (store.db.version != opts.version) {
-        var request = store.db.setVersion(opts.version);
+      if (store.db.version != '0.7') {
+        var request = store.db.setVersion('0.7');
         request.onsuccess = function(event) {
           // Create our object store for cached data
           if (!store.db.objectStoreNames.contains('cache')) {
-              store.db.createObjectStore('cache');
+              store.db.createObjectStore('cache', {keyPath: 'key'});
           }
           opts.ready && opts.ready.call(store);
         };
@@ -106,18 +104,19 @@ function StickyStore(opts) {
         objectStore.openCursor().onsuccess = function(event) {
           var cursor = event.target.result;
           // Only load records for this specific store
-          if (cursor && cursor.key.indexOf(opts.name + opts.version) === 0) {
-            if (cursor.value.data.substr(0, 4) === 'J::O') {
+          if (cursor && cursor.key.indexOf(opts.name) === 0) {
+            var key = cursor.key.replace(new RegExp(opts.name.replace(/[^\w]/gi, ''), 'gi'), '');
+            if (cursor.value.data && cursor.value.data.substr(0, 4) === 'J::O') {
               try {
                 var item = JSON.parse(cursor.value.data.substr(4));
-                store.set(cursor.key, item);
+                store.set(key, item);
               }
               catch (err) {
                 console.log('Sticky Error: ' + err);
               }
             }
             else {
-              store.set(cursor.key, cursor.value.data);
+              store.set(key, cursor.value.data);
             }
             cursor['continue']();
           }
@@ -136,7 +135,7 @@ function StickyStore(opts) {
   else if (window.openDatabase) {
     // Try and open DB
     try {
-      this.db = window.openDatabase(opts.name, '1.0.0', 'Sticky Offline Web Cache', (opts.size * 1024 * 1024));
+      this.db = window.openDatabase(opts.name+'_sticky', '0.7', 'Sticky Offline Web Cache', (opts.size * 1024 * 1024));
       if (this.db) {
         this.db.transaction(function(tx) {
           tx.executeSql('CREATE TABLE IF NOT EXISTS cache (key TEXT, data TEXT)');
@@ -146,18 +145,19 @@ function StickyStore(opts) {
               for (var i=0; i<results.rows.length; i++) {
                 var record = results.rows.item(i);
                 // Only load records for this specific store
-                if (record['key'].indexOf(opts.name + opts.version) === 0) {
+                if (record['key'].indexOf(opts.name) === 0) {
+                  var key = record['key'].replace(new RegExp(opts.name.replace(/[^\w]/gi, ''), 'gi'), '');
                   if (record['data'] && record['data'].substr(0, 4) === 'J::O') {
                     try {
                       var item = JSON.parse(record['data'].substr(4));
-                      store.set(record['key'], item);
+                      store.set(key, item);
                     }
                     catch (err) {
                       console.log('Sticky Error: ' + err);
                     }
                   }
                   else {
-                    store.set(record['key'], record['data']);
+                    store.set(key, record['data']);
                   }
                 }
               }
@@ -199,7 +199,7 @@ StickyStore.prototype.set = (function(key, item, callback) {
   }
 
   // Prefix key with store name/identifier
-  key = (this.opts.name + this.opts.version + key).replace(/[^\w]/gi, '');
+  var key = (this.opts.name + key).replace(/[^\w]/gi, '');
 
   var value;
   var itemType = typeof item;
@@ -243,8 +243,7 @@ StickyStore.prototype.set = (function(key, item, callback) {
         // Copy value to indexedDB
         var tx = this.db.transaction(['cache'], IDBTransaction.READ_WRITE, 0);
         var objStore = tx.objectStore('cache');
-        var obj = {'key':key, 'value':value};
-        var request = objStore.put(obj, obj.key);
+        var request = objStore.put({'key':key, 'data':value});
         request.onsuccess = function(e) {
           callback && callback.call(store, item);
         };
@@ -296,7 +295,7 @@ StickyStore.prototype.get = (function(key, callback) {
   var _default = null;
 
   // Prefix key with store name
-  key = (this.opts.name + this.opts.version + key).replace(/[^\w]/gi, '');
+  var key = (this.opts.name + key).replace(/[^\w]/gi, '');
 
   // Not in memory, let's check elsewhere
   if (!this.cache[key]) {
@@ -358,7 +357,7 @@ StickyStore.prototype.remove = (function(key, callback) {
   }
 
   // Prefix key with store name
-  key = (this.opts.name + this.opts.version + key).replace(/[^\w]/gi, '');
+  key = (this.opts.name + key).replace(/[^\w]/gi, '');
 
   // Remove from memory
   if (this.cache[key]) {
