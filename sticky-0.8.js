@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 0.7
+ * Version 0.8
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -59,34 +59,53 @@ function StickyStore(opts) {
   this.cache = {}; // Memory cache container object
   this.db; // Indexed DB or Web SQL connection object
 
-  // Wrap localStorage and globalStorage
-  if (window.localStorage) {
-    this.storage = window.localStorage;
-  }
-  else if (window.globalStorage) {
-    this.storage = window.globalStorage[opts.domain];
-  }
-
   // Needed to keep context in async methods
   var store = this;
 
-  // Initialize IndexedDB and repopulate cache
-  if ('webkitIndexedDB' in window) {
-     window.indexedDB = window.webkitIndexedDB;
-     window.IDBTransaction = window.webkitIDBTransaction;
+  // Wrap localStorage and globalStorage
+  if (window.localStorage) {
+    this.storage = localStorage;
   }
-  else if ('mozIndexedDB' in window) {
+  else if (window.globalStorage) {
+    this.storage = globalStorage[opts.domain];
+  }
+
+  // Load items from localStorage
+  if (this.storage) {
+    for (var i=0; i<this.storage.length; i++) {
+      var record = this.storage.key(i);
+      var data = this.storage.getItem(key);
+      if (record.indexOf(opts.name) === 0) {
+        var key = record.replace(new RegExp(opts.name.replace(/[^\w]/gi, ''), 'gi'), '');
+        if (data && data.substr(0, 4) === 'J::O') {
+          try {
+            var item = JSON.parse(data.substr(4));
+            store.set(key, item);
+          }
+          catch (err) {
+            console.log('Sticky Error: ' + err);
+          }
+        }
+        else {
+          store.set(key, data);
+        }
+      }
+    }
+  }
+
+  // Initialize IndexedDB and repopulate cache
+  if ('mozIndexedDB' in window) {
      window.indexedDB = window.mozIndexedDB;
   }
   if (window.indexedDB) {
     // Request DB
     var request = window.indexedDB.open(opts.name+'_sticky', 'Sticky Offline Web Cache');
     request.onsuccess = function(event) {
-      store.db = event.target.result;
+      store.db = event.target.result
       // If version is different, we need to set version
       // and create an object store
-      if (store.db.version != '0.7') {
-        var request = store.db.setVersion('0.7');
+      if (store.db.version != '0.8') {
+        var request = store.db.setVersion('0.8');
         request.onsuccess = function(event) {
           // Create our object store for cached data
           if (!store.db.objectStoreNames.contains('cache')) {
@@ -100,7 +119,8 @@ function StickyStore(opts) {
         };
       }
       else {
-        var objectStore = store.db.transaction('cache').objectStore('cache');
+        var transaction = store.db.transaction('cache');
+        var objectStore = transaction.objectStore('cache');
         objectStore.openCursor().onsuccess = function(event) {
           var cursor = event.target.result;
           // Only load records for this specific store
@@ -135,7 +155,7 @@ function StickyStore(opts) {
   else if (window.openDatabase) {
     // Try and open DB
     try {
-      this.db = window.openDatabase(opts.name+'_sticky', '0.7', 'Sticky Offline Web Cache', (opts.size * 1024 * 1024));
+      this.db = window.openDatabase(opts.name+'_sticky', '0.8', 'Sticky Offline Web Cache', (opts.size * 1024 * 1024));
       if (this.db) {
         this.db.transaction(function(tx) {
           tx.executeSql('CREATE TABLE IF NOT EXISTS cache (key TEXT, data TEXT)');
@@ -201,23 +221,25 @@ StickyStore.prototype.set = (function(key, item, callback) {
   // Prefix key with store name/identifier
   var key = (this.opts.name + key).replace(/[^\w]/gi, '');
 
-  var value;
-  var itemType = typeof item;
+  var value = item;
+  var itemType = typeof value;
 
   // Store item in memory cache
   this.cache[key] = item;
 
   // Objects and arrays are stringified, and aren't stored in cookies (they're too big)
-  if (itemType === 'object' || itemType === 'array') {
-    try {
-      value = 'J::O' + JSON.stringify(item);
+  if (itemType !== 'string' ) {
+    if (itemType === 'object' || itemType === 'array') {
+      try {
+        value = 'J::O' + JSON.stringify(value);
+      }
+      catch (err) {
+        console.log('Sticky Error: ' + err);
+      }
     }
-    catch (err) {
-      console.log('Sticky Error: ' + err);
+    else {
+        value = value.toString();
     }
-  }
-  else if (itemType === 'string') {
-    value = item;
   }
 
   if (value) {
@@ -421,12 +443,19 @@ StickyStore.prototype.remove = (function(key, callback) {
 
 StickyStore.prototype.removeAll = (function(callback) {
   var store = this;
+  var count = 0;
+
+  var removed = function() {
+    count = count - 1;
+    if (count === 0 ) {
+      if (callback && typeof callback === 'function') {
+        callback.call(this, this.cache[key]);
+      }
+    }
+  };
 
   for (var key in store.cache) {
-    store.remove(key);
-  }
-
-  if (callback && typeof callback === 'function') {
-    callback.call(this, this.cache[key]);
+    count++;
+    store.remove(key.replace(this.opts.name, ''), removed);
   }
 });
