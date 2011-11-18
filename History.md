@@ -1,5 +1,11 @@
 # Release History
 
+## 0.8 / 2011-11-17
+
+* Fixed bug with storing Number objects
+* Refactored some indexedDB logic when repopulating the store
+* Refactored type checking in StickyStore.set()
+
 ## 0.7 / 2011-11-01
 
 * Removed versioning of stores due to too many idiosyncracies
