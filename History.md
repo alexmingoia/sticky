@@ -1,5 +1,9 @@
 # Release History
 
+## 0.9 / 2011-12-16
+
+* Convert stored numbers to Number objects when repopulating
+
 ## 0.8 / 2011-11-17
 
 * Fixed bug with storing Number objects
