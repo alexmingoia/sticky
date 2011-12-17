@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 0.8
+ * Version 0.9
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -75,19 +75,28 @@ function StickyStore(opts) {
     for (var i=0; i<this.storage.length; i++) {
       var record = this.storage.key(i);
       var data = this.storage.getItem(key);
-      if (record.indexOf(opts.name) === 0) {
+      if (data && record.indexOf(opts.name) === 0) {
         var key = record.replace(new RegExp(opts.name.replace(/[^\w]/gi, ''), 'gi'), '');
-        if (data && data.substr(0, 4) === 'J::O') {
+        var item;
+        // Object
+        if (data.indexOf('J::O') === 0) {
           try {
-            var item = JSON.parse(data.substr(4));
-            store.set(key, item);
+            item = JSON.parse(data.slice(4));
           }
           catch (err) {
             console.log('Sticky Error: ' + err);
           }
         }
+        // String
+        else if (isNaN(data)) {
+            item = data;
+        }
+        // Number
         else {
-          store.set(key, data);
+            item = Number(data);
+        }
+        if (item) {
+          store.set(key, item);
         }
       }
     }
@@ -124,19 +133,28 @@ function StickyStore(opts) {
         objectStore.openCursor().onsuccess = function(event) {
           var cursor = event.target.result;
           // Only load records for this specific store
-          if (cursor && cursor.key.indexOf(opts.name) === 0) {
+          if (cursor && cursor.value.data && cursor.key.indexOf(opts.name) === 0) {
             var key = cursor.key.replace(new RegExp(opts.name.replace(/[^\w]/gi, ''), 'gi'), '');
-            if (cursor.value.data && cursor.value.data.substr(0, 4) === 'J::O') {
+            var item;
+            // Object
+            if (cursor.value.data.indexOf('J::O') === 0) {
               try {
-                var item = JSON.parse(cursor.value.data.substr(4));
-                store.set(key, item);
+                item = JSON.parse(cursor.value.data.slice(4));
               }
               catch (err) {
                 console.log('Sticky Error: ' + err);
               }
             }
+            // String
+            else if (isNaN(cursor.value.data)) {
+                item = cursor.value.data;
+            }
+            // Number
             else {
-              store.set(key, cursor.value.data);
+                item = Number(cursor.value.data);
+            }
+            if (item) {
+              store.set(key, item);
             }
             cursor['continue']();
           }
@@ -147,7 +165,7 @@ function StickyStore(opts) {
       }
     }
     request.onerror = function(event) {
-      console.log('Sticky Error: ' + request.errorCode);
+      console.log("Sticky Error: Couldn't open Indexed DB (Code " + request.errorCode + ")");
       opts.ready && opts.ready.call(store);
     }
   }
@@ -165,19 +183,28 @@ function StickyStore(opts) {
               for (var i=0; i<results.rows.length; i++) {
                 var record = results.rows.item(i);
                 // Only load records for this specific store
-                if (record['key'].indexOf(opts.name) === 0) {
+                if (record['data'] && record['key'].indexOf(opts.name) === 0) {
                   var key = record['key'].replace(new RegExp(opts.name.replace(/[^\w]/gi, ''), 'gi'), '');
-                  if (record['data'] && record['data'].substr(0, 4) === 'J::O') {
+                  var item;
+                  // Object
+                  if (record['data'].indexOf('J::O') === 0) {
                     try {
-                      var item = JSON.parse(record['data'].substr(4));
-                      store.set(key, item);
+                      item = JSON.parse(record['data'].slice(4));
                     }
                     catch (err) {
                       console.log('Sticky Error: ' + err);
                     }
                   }
+                  // String
+                  else if (isNaN(record['data'])) {
+                      item = record['data'];
+                  }
+                  // Number
                   else {
-                    store.set(key, record['data']);
+                      item = Number(record['data']);
+                  }
+                  if (item) {
+                    store.set(key, item);
                   }
                 }
               }
@@ -446,16 +473,17 @@ StickyStore.prototype.removeAll = (function(callback) {
   var count = 0;
 
   var removed = function() {
-    count = count - 1;
-    if (count === 0 ) {
-      if (callback && typeof callback === 'function') {
-        callback.call(this, this.cache[key]);
-      }
+    count--;
+    if (count < 1 && callback && typeof callback === 'function') {
+      callback.call(this, this.cache[key]);
     }
   };
 
   for (var key in store.cache) {
     count++;
+  }
+
+  for (var key in store.cache) {
     store.remove(key.replace(this.opts.name, ''), removed);
   }
 });
