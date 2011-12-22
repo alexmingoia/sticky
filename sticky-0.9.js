@@ -297,17 +297,23 @@ StickyStore.prototype.set = (function(key, item, callback) {
           callback && callback.call(store, item);
         };
         request.onerror = function(e) {
+          console.log('Sticky Error: ' + e.target.errorCode);
           callback && callback.call(store, false);
         };
       }
       // Copy value to webDB
       else {
         // Insert callback after update
-        var insert = function(tx, error) {
+        var insert = function(tx, result) {
           // If update failed then insert
-          if (error && error.rowsAffected === 0) {
-            tx.executeSql('INSERT INTO cache (key, data) VALUES (?, ?)', [key, value], function(tx, rs) {
-              callback && callback.call(store, item);
+          if (result && result.rowsAffected === 0) {
+            tx.executeSql('INSERT INTO cache (key, data) VALUES (?, ?)', [key, value], function(tx, result) {
+              if (result && result.rowsAffected === 0) {
+                  callback && callback.call(store, false);
+              }
+              else {
+                  callback && callback.call(store, item);
+              }
             });
           }
           else {
