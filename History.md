@@ -1,5 +1,9 @@
 # Release History
 
+## 1.0 / 2011-12-22
+
+* Improved error handling
+
 ## 0.9 / 2011-12-16
 
 * Convert stored numbers to Number objects when repopulating

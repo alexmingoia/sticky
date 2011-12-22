@@ -31,7 +31,7 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 #### HTML:
 
-    <script src="sticky-0.9.js" type="text/javascript"></script>
+    <script src="sticky-1.0.js" type="text/javascript"></script>
 
 #### JavaScript:
 
