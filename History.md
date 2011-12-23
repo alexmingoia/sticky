@@ -1,5 +1,12 @@
 # Release History
 
+## 1.1 / 2011-12-23
+
+* Added events; StickyStore.on() and StickyStore.trigger()
+* Aliased the ready option by registering it with the 'ready' event
+* Expanded error handling and replaced console messages with 'error' events
+* Added events for StickyStore.get(), StickyStore.set(), and StickyStore.remove()
+
 ## 1.0 / 2011-12-22
 
 * Improved error handling

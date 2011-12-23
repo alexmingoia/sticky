@@ -27,11 +27,11 @@ Usually 1-4KB per domain. Only strings that are less than 128 characters are per
 
 For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
-## Usage
+## Getting Started
 
 #### HTML:
 
-    <script src="sticky-1.0.js" type="text/javascript"></script>
+    <script src="sticky-1.1.js" type="text/javascript"></script>
 
 #### JavaScript:
 
@@ -57,7 +57,7 @@ Alternatively, you can specify some options for this store by passing the opts a
 
     var store = new StickyStore({
         name: 'Store A',       // Unique identifier for this store. Required to use multiple stores.
-        ready: function() {},  // Fires after cache has been repopulated.
+        ready: function() {},  // Fires after cache has been repopulated. The store being the first argument.
         domain: 'example.com', // Custom cookie domain.
         expires: 48,           // Hours. Used for cookie expiration.
         size: 5                // indexedDB / webSQL database size in megabytes.
@@ -68,6 +68,8 @@ When you initialize a store, its cache will be repopulated from browser storage.
 ### Multiple Stores
 
 Cached data is specific to a store's ```name``` option. Sticky supports multiple stores by prefixing the key values with the name.
+
+## Methods
 
 ### Get
 
@@ -120,6 +122,43 @@ Removes the cached value from this store from all storage mechanisms and returns
 Removes all cached values for this store from all storage mechanisms. ```removeAll``` also takes an optional callback function as the second argument.
 
     store.removeAll();
+
+## Events
+
+Sticky has events for errors, get, set, and remove.
+
+### Ready
+
+    store.on('ready', function(store) {
+        console.log(store.cache); // Returns the populated cache
+    });
+
+### Get
+
+    store.on('get', function(key, value) {
+        console.log(key); // Returns key of item retrieved
+        console.log(value); // Returns value of item retrieved
+    });
+
+### Set
+
+    store.on('set', function(key, value) {
+        console.log(key); // Returns key of the item set
+        console.log(value); // Returns value of item set
+    });
+
+### Remove
+
+    store.on('remove', function(key) {
+        console.log(key); // Returns key of the item removed
+    });
+
+### Error
+
+    store.on('error', function(error, item) {
+        console.log(error); // Returns the error message
+        console.log(item); // Returns the item, if available
+    });
 
 ## License
 
