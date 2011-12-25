@@ -13,15 +13,15 @@ Sticky is a simple, key/value pair, browser-storage cache leveraging the latest 
 ## Storage Mechanisms and Browser Support
 
 * **WebSQL (SQLite)**  
-Chrome 4+, Opera 10.5+, Safari 3.1+, and Android Browser 2.1+
+Chrome 4+, Opera 10.5+, Safari 3.1+ and Android Browser 2.1+
 5MB of data per DB, but can request more
 * **IndexedDB**  
-IE 10+, FireFox 4+, and Chrome 11+
+IE 10+, Firefox 4+ and Chrome 11+
 * **localStorage**  
 Safari 4+, Mobile Safari (iPhone/iPad), Firefox 3.5+, Internet Explorer 8+ and Chrome 4+
 5MB of data per domain
 * **globalStorage**  
-FireFox 2-3
+Firefox 2-3
 * **Cookies**  
 Usually 1-4KB per domain. Only strings that are less than 128 characters are persisted to cookies by Sticky.
 
@@ -83,13 +83,13 @@ You can also specify a default value for failure:
 
 And callbacks!
 
-    store.get('something', callback(val) {
+    store.get('something', function(val) {
         console.log(val);
     });
 
 ### Set
 
-Caches a value and returns the cached value or false on error. You can pass any type of value: String, array, object, and number. Objects and arrays will be stringified and prefixed with ```J::O``` for storage. String values longer than 128 characters will not be persisted to cookies.
+Caches a value and returns the cached value or false on error. You can pass any type of value: string, array, object, and number. Objects and arrays will be stringified and prefixed with ```J::O``` for storage. String values longer than 128 characters will not be persisted to cookies.
 
 You can set strings or numbers:
 
