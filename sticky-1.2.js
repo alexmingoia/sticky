@@ -524,7 +524,7 @@ StickyStore.prototype.remove = (function(key, callback) {
     // Remove web SQL
     else {
       store.db.transaction(function(tx) {
-        tx.executeSql('DELETE FROM cache WHERE key=?', [key], function(tx, rs) {;
+        tx.executeSql('DELETE FROM cache WHERE key=?', [key], function(tx, result) {;
           if (result && result.rowsAffected === 0) {
             callback && callback.call(store, false);
             store.trigger('error', 'Failed to insert item in webDB', key);
