@@ -1,5 +1,9 @@
 # Release History
 
+## 1.2 / 2011-12-29
+
+* Fixed typo in webSQL removal callback
+
 ## 1.1 / 2011-12-23
 
 * Added events; StickyStore.on() and StickyStore.trigger()
