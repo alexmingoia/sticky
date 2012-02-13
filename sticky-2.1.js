@@ -90,22 +90,21 @@ function StickyStore(options) {
    * @param String adapter
    */
   var isReady = (function(adapter, ready) {
-    if (ready) {
-      this.connected.push(adapter);
-      this.adapters[adapter].index = this.connected.length - 1;
-    }
-    // Initialize next preferred adapter
     var adapterOptsIdx;
     for (var i=0; i<this.options.adapters.length; i++) {
       if (this.options.adapters[i] === adapter) {
         adapterOptsIdx = i + 1;
       }
     }
+    if (ready) {
+      this.connected.push(adapter);
+      this.adapters[adapter].index = this.connected.length - 1;
+      if (this.connected.length > 0) {
+        this.trigger('ready', this);
+      }
+    }
     if (adapterOptsIdx && this.adapters[this.options.adapters[adapterOptsIdx]]) {
       this.adapters[this.options.adapters[adapterOptsIdx]].init.call(this, isReady);
-    }
-    else {
-      this.trigger('ready', this);
     }
   });
 
