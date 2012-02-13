@@ -1,5 +1,12 @@
 # Release History
 
+## 2.0 / 2012-02-13
+
+* Added support for new IDBRequest.onupdateneeded event, while keeping
+  backwards-compatible with old IDBDatabase.setVersion() method.
+* Re-written for modularization of storage mechanisms.
+* Proper support for multiple stores.
+
 ## 1.2 / 2011-12-29
 
 * Fixed typo in webSQL removal callback

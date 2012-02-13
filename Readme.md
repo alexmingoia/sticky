@@ -1,22 +1,25 @@
 # Sticky
 
-Sticky is a simple, key/value pair, browser-storage cache leveraging the latest HTML5 storage API's. Sticky persists to memory, indexedDB, webSQL, localStorage, globalStorage, and cookies. Objects and arrays are stringified before storage, and strings longer than 128 characters aren't persisted to cookies.
+Sticky is a simple, key/value pair browser-storage cache leveraging the latest HTML5 storage API's.
+
+Sticky persists in your preferred order to one of indexedDB, webSQL, localStorage, globalStorage, or cookies.
 
 #### Features
 
 * Tiny and fast
 * Callbacks for everything
+* Multiple stores
 * Store strings, numbers, and objects – JSON in and JSON out
 * Simple abstraction for IndexedDB and WebSQL's complexity
 * MIT licensed
 
 ## Storage Mechanisms and Browser Support
 
+* **IndexedDB**  
+IE 10+, Firefox 4+ and Chrome 11+
 * **WebSQL (SQLite)**  
 Chrome 4+, Opera 10.5+, Safari 3.1+ and Android Browser 2.1+
 5MB of data per DB, but can request more
-* **IndexedDB**  
-IE 10+, Firefox 4+ and Chrome 11+
 * **localStorage**  
 Safari 4+, Mobile Safari (iPhone/iPad), Firefox 3.5+, Internet Explorer 8+ and Chrome 4+
 5MB of data per domain
@@ -29,72 +32,105 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 ## Getting Started
 
-#### HTML:
+### HTML:
 
-    <script src="sticky-1.2.js" type="text/javascript"></script>
+    <script src="sticky-2.0.js" type="text/javascript"></script>
 
-#### JavaScript:
+### JavaScript:
 
-    // Initialize your store and repopulate cached data
     var store = new StickyStore();
 
-    // Set
     store.set('color', 'red');
-
-    // Get
     store.get('color');
-
-    // Remove
     store.remove('color');
 
-### Initialize a store
+## Initialize
 
-First, you must create a sticky store object like so:
+First, you must create the `StickyStore` like so:
 
     var store = new StickyStore();
 
-Alternatively, you can specify some options for this store by passing the opts argument:
+Alternatively, you can specify some options for this store by passing the `options` argument:
 
     var store = new StickyStore({
-        name: 'Store A',       // Unique identifier for this store. Required to use multiple stores.
-        ready: function() {},  // Fires after cache has been repopulated. The store being the first argument.
-        domain: 'example.com', // Custom cookie domain.
-        expires: 48,           // Hours. Used for cookie expiration.
-        size: 5                // indexedDB / webSQL database size in megabytes.
+        name: 'Sticky',
+        adapters: ['localStorage', 'indexedDB', 'webSQL', 'cookie'],
+        ready: function() {},
+        expires: (24*60*60*1000),
+        size: 5
     });
 
-When you initialize a store, its cache will be repopulated from browser storage. Because indexedDB and webSQL operate asynchronously, Sticky will fire the ```store.opts.ready``` function after the cache has been repopulated.
+Because indexedDB and webSQL operate asynchronously, Sticky will fire the ```ready``` event after all storage interfaces have been established.
 
-### Multiple Stores
+## Options
 
-Cached data is specific to a store's ```name``` option. Sticky supports multiple stores by prefixing the key values with the name.
+All settings are optional.
 
-## Methods
+`name` *String*  
+The store name. You must specificy a store name to use multiple stores.
+Only alphanumeric characters are allowed.
 
-### Get
+`adapters` *Array*  
+An array of storage adapters to use, in preferred order.
+Defaults to `['localStorage', 'indexedDB', 'webSQL', 'cookie']`.
 
-Returns the cached value or null if it isn't found. Example:
+`ready` *Function*  
+This function is called after the store has been initialized and 
+storage interfaces are connected.
 
-    store.get('something');
+`expires` *Number*  
+Cookie expiration in milliseconds.
 
-You can also specify a default value for failure:
+`size` *Number*  
+webSQL database size in megabytes.
 
-    store.get('something', 'not there'); // Returns "not there" instead of false
+## get()
 
-And callbacks!
+Retrieves a stored item.
 
-    store.get('something', function(val) {
-        console.log(val);
+If the preferred available adapter is asynchronous, you must use callbacks as `StickyStore.get()` will not return a value.
+
+##### Parameters
+
+`key` *String*  
+`callback` The callback's first argument's value will be the stored item, or false on failure. *Mixed (Optional)*  
+`adapter` The storage adapter to use. *String (Optional)*
+
+##### Returns
+
+Returns stored item or false.
+
+##### Example
+
+    // Synchronous
+    var result = store.get('something');
+
+    // Asynchronous
+    store.get('something', function(result) {
+        console.log(result);
     });
 
-### Set
+## set()
 
-Caches a value and returns the cached value or false on error. You can pass any type of value: string, array, object, and number. Objects and arrays will be stringified and prefixed with ```J::O``` for storage. String values longer than 128 characters will not be persisted to cookies.
+Stores an item and returns the stored item or false on failure. You can pass any type of value: string, array, object, and number.
+
+##### Parameters
+
+`key` *String*  
+`item` *Mixed*  
+`callback` The callback's first argument's value will be the stored item, or false on failure. *Mixed (Optional)*  
+
+`adapter` The adapter to use. *String (Optional)*
+
+##### Returns
+
+Returns stored item or false.
+
+##### Example
 
 You can set strings or numbers:
 
     store.set('color', 'red');
-
     store.set('version', 5);
 
 Or objects:
@@ -107,19 +143,37 @@ Or objects:
 
 You can also specify a callback:
 
-    store.set('color', 'red', function(val) {
-        console.log(val); // Outputs "red"
+    store.set('color', 'red', function(result) {
+        console.log(result); // Outputs "red"
     });
 
-### Remove
+## remove()
 
-Removes the cached value from this store from all storage mechanisms and returns true if successful. ```remove``` also takes an optional callback function as the second argument.
+Removes the cached value and returns true if successful.
+
+##### Parameters
+
+`key` Key *String*  
+`callback` Callback's argument is true for success and false for failure. *Mixed (Optional)*  
+`adapter` The adapter to use. *String (Optional)*
+
+##### Returns
+
+Returns true for success or false for failure.
+
+##### Example
 
     store.remove('something');
 
-### Remove All
+## removeAll()
 
-Removes all cached values for this store from all storage mechanisms. ```removeAll``` also takes an optional callback function as the second argument.
+Removes all stored items from all storage mechanisms.
+
+##### Parameters
+
+`callback` *Mixed (Optional)*
+
+##### Example
 
     store.removeAll();
 
@@ -130,21 +184,21 @@ Sticky has events for errors, get, set, and remove.
 ### Ready
 
     store.on('ready', function(store) {
-        console.log(store.cache); // Returns the populated cache
+        console.log(store); // Returns the ready store object
     });
 
 ### Get
 
-    store.on('get', function(key, value) {
+    store.on('get', function(key, result) {
         console.log(key); // Returns key of item retrieved
-        console.log(value); // Returns value of item retrieved
+        console.log(result); // Returns value of item retrieved
     });
 
 ### Set
 
-    store.on('set', function(key, value) {
+    store.on('set', function(key, result) {
         console.log(key); // Returns key of the item set
-        console.log(value); // Returns value of item set
+        console.log(result); // Returns value of item set
     });
 
 ### Remove
