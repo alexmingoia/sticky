@@ -26,7 +26,7 @@ Safari 4+, Mobile Safari (iPhone/iPad), Firefox 3.5+, Internet Explorer 8+ and C
 * **globalStorage**  
 Firefox 2-3
 * **Cookies**  
-Usually 1-4KB per domain. Only strings that are less than 128 characters are persisted to cookies by Sticky.
+Usually 4KB+ per domain.
 
 For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
@@ -34,7 +34,7 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 ### HTML:
 
-    <script src="sticky-2.0.js" type="text/javascript"></script>
+    <script src="sticky-2.1.js" type="text/javascript"></script>
 
 ### JavaScript:
 
@@ -76,7 +76,7 @@ Defaults to `['localStorage', 'indexedDB', 'webSQL', 'cookie']`.
 
 `ready` *Function*  
 This function is called after the store has been initialized and 
-storage interfaces are connected.
+at least one storage interface has been connected.
 
 `expires` *Number*  
 Cookie expiration in milliseconds.

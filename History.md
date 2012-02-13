@@ -1,5 +1,10 @@
 # Release History
 
+## 2.1 / 2012-02-13
+
+* Instead of waiting for all storage interfaces to connect before firing
+  ready event, only wait for one interface to connect.
+
 ## 2.0 / 2012-02-13
 
 * Added support for new IDBRequest.onupdateneeded event, while keeping
