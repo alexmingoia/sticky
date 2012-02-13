@@ -99,7 +99,7 @@ function StickyStore(options) {
     if (ready) {
       this.connected.push(adapter);
       this.adapters[adapter].index = this.connected.length - 1;
-      if (this.connected.length > 0) {
+      if (this.connected.length === 1) {
         this.trigger('ready', this);
       }
     }
