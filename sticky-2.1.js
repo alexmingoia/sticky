@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 2.0
+ * Version 2.1
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
