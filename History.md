@@ -1,5 +1,9 @@
 # Release History
 
+## 2.2 / 2012-02-15
+
+* Fixed localStorage adapter's get method not unserializing
+
 ## 2.1 / 2012-02-13
 
 * Instead of waiting for all storage interfaces to connect before firing
