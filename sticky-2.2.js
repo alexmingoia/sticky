@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 2.1
+ * Version 2.2
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -257,6 +257,7 @@ StickyStore.prototype.get = (function(key, callback, adapter) {
  */
 
 StickyStore.prototype.set = (function(key, item, callback, adapter) {
+  if (!item) return false;
   return this.exec.call(this, 'set', key, item, callback, adapter);
 });
 
@@ -658,13 +659,13 @@ StickyStore.prototype.adapters.localStorage.get = (function(key, callback) {
   var item;
 
   try {
-    item = this.adapters.localStorage.io.getItem(this.options.name + '_' + key);
+    item = this.unserialize(this.adapters.localStorage.io.getItem(this.options.name + '_' + key));
   }
   catch (err) {
     this.trigger('error', err);
   }
   if (item) {
-    callback && callback.call(this, this.unserialize(item));
+    callback && callback.call(this, item);
     return item;
   }
   else {
