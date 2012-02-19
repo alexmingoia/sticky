@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 2.4
+ * Version 2.5
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -192,18 +192,22 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
     // preferred adapter is necessary.
     asyncHandler = function(result) {
       if (result === false && typeof nextAdapter === 'string') {
-        args.push(nextAdapter);
+        args.splice(-1, 1);
+        args.push(callback, nextAdapter);
         return store[op].apply(store, args);
       }
       callback && callback.call(store, result);
       store.trigger(op, key, result);
     };
+    args.push(asyncHandler);
+  }
+  else {
+    args.push(callback);
   }
 
   var result;
   if (store.adapters[adapter].io) {
     if (async) {
-      args.push(asyncHandler);
       return store.adapters[adapter][op].apply(store, args);
     }
     result = store.adapters[adapter][op].apply(store, args);
