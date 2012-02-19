@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 2.3
+ * Version 2.4
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -184,6 +184,7 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
   }
 
   var async = (adapter === 'indexedDB' || adapter === 'webSQL') ? true : false;
+  var args = (op === 'set') ? [key, item] : [key];
 
   if (async === true) {
     // This handles the callback for asynchronous
@@ -191,10 +192,8 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
     // preferred adapter is necessary.
     asyncHandler = function(result) {
       if (result === false && typeof nextAdapter === 'string') {
-        if (op === 'set') {
-          return store.set.call(store, key, item, callback, nextAdapter);
-        }
-        return store[op].call(store, key, callback, nextAdapter);
+        args.push(nextAdapter);
+        return store[op].apply(store, args);
       }
       callback && callback.call(store, result);
       store.trigger(op, key, result);
@@ -204,23 +203,14 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
   var result;
   if (store.adapters[adapter].io) {
     if (async) {
-      if (op === 'set') {
-        return store.adapters[adapter].set.call(store, key, item, asyncHandler);
-      }
-      return store.adapters[adapter][op].call(store, key, asyncHandler);
+      args.push(asyncHandler);
+      return store.adapters[adapter][op].apply(store, args);
     }
-    if (op === 'set') {
-      result = store.adapters[adapter].set.call(store, key, item);
-    }
-    else {
-      result = store.adapters[adapter][op].call(store, key, item);
-    }
+    result = store.adapters[adapter][op].apply(store, args);
   }
   if (result === false && typeof nextAdapter === 'string') {
-    if (op === 'set') {
-      return store.set.call(store, key, item. callback, nextAdapter);
-    }
-    return store[op].call(store, key, callback, nextAdapter);
+    args.push(nextAdapter);
+    return store[op].apply(store, args);
   }
   store.trigger(op, key, result);
   callback && callback.call(store, result);
@@ -343,6 +333,7 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
 
   // Method to create objectStore
   var createObjectStore = function(event) {
+    store.adapters.indexedDB.io = event.target.result
     if (!store.adapters.indexedDB.io.objectStoreNames.contains(store.options.name)) {
       store.adapters.indexedDB.io.createObjectStore(store.options.name, {keyPath: 'key'});
     }
@@ -365,10 +356,12 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
           store.trigger('error', "Couldn't change indexedDB version (Code " + request.errorCode + ")");
         };
       }
-      callback && callback.call(store, 'indexedDB', true);
+      else {
+        callback && callback.call(store, 'indexedDB', true);
+      }
     };
 
-    request.onupdateneeded = createObjectStore;
+    request.onupgradeneeded = createObjectStore;
 
     request.onerror = function(event) {
       callback && callback.call(store, 'indexedDB', false);
