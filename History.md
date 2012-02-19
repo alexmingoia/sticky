@@ -1,5 +1,9 @@
 # Release History
 
+## 2.5 / 2012-02-19
+
+Fixed bug with callback not firing after all storage adapters are exhausted"[master b87b5f0] Fixed bug with callback not firing after all storage adapters are exhausted
+
 ## 2.4 / 2012-02-18
 
 * Cleaned-up StickyStore.exec()
