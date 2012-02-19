@@ -1,5 +1,9 @@
 # Release History
 
+## 2.4 / 2012-02-18
+
+* Cleaned-up StickyStore.exec()
+
 ## 2.3 / 2012-02-18
 
 * Fixed bug with indexedDB initialization not firing callback in certain
