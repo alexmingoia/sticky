@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 2.2
+ * Version 2.3
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -351,7 +351,7 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
 
   if (window.indexedDB) {
     // Request to open database
-    var request = window.indexedDB.open('Sticky', 20);
+    var request = window.indexedDB.open(store.options.name, 20);
 
     request.onsuccess = function(event) {
       store.adapters.indexedDB.io = event.target.result
@@ -365,9 +365,7 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
           store.trigger('error', "Couldn't change indexedDB version (Code " + request.errorCode + ")");
         };
       }
-      else {
-        createObjectStore();
-      }
+      callback && callback.call(store, 'indexedDB', true);
     };
 
     request.onupdateneeded = createObjectStore;
@@ -468,14 +466,12 @@ StickyStore.prototype.adapters.indexedDB.remove = (function(key, callback) {
 
 StickyStore.prototype.adapters.indexedDB.removeAll = (function(callback) {
   var store = this;
-  var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_WRITE);
-  var objStore = tx.objectStore(store.options.name);
-  var request = objStore.clear();
+  var request = store.adapters.indexedDB.io.deleteDatabase(store.options.name);
   request.onsuccess = function(e) {
     callback && callback.call(store, true);
   };
   request.onerror = function(e) {
-    store.trigger('error', 'Error clearing indexedDB objectStore', err);
+    store.trigger('error', 'Error deleting indexedDB database', err);
     callback && callback.call(store, false);
   };
 });
