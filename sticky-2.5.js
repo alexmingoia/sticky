@@ -201,9 +201,6 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
     };
     args.push(asyncHandler);
   }
-  else {
-    args.push(callback);
-  }
 
   var result;
   if (store.adapters[adapter].io) {
@@ -213,7 +210,7 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
     result = store.adapters[adapter][op].apply(store, args);
   }
   if (result === false && typeof nextAdapter === 'string') {
-    args.push(nextAdapter);
+    args.push(callback, nextAdapter);
     return store[op].apply(store, args);
   }
   store.trigger(op, key, result);
