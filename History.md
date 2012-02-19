@@ -1,5 +1,10 @@
 # Release History
 
+## 2.3 / 2012-02-18
+
+* Fixed bug with indexedDB initialization not firing callback in certain
+  cases.
+
 ## 2.2 / 2012-02-15
 
 * Fixed localStorage adapter's get method not unserializing
