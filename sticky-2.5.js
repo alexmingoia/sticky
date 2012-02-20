@@ -277,7 +277,7 @@ StickyStore.prototype.remove = (function(key, callback, adapter) {
       }
     };
   }
-  for (var i=1; i<this.connected.length; i++) {
+  for (var i=0; i<this.connected.length; i++) {
     this.adapters[this.connected[i]].remove.call(this, key, asyncHandler);
   }
   return this.exec.call(this, 'remove', key);
@@ -703,10 +703,12 @@ StickyStore.prototype.adapters.localStorage.set = (function(key, item, callback)
 StickyStore.prototype.adapters.localStorage.remove = (function(key, callback) {
   try {
     this.adapters.localStorage.io.removeItem(this.options.name + '_' + key);
+    callback && callback.call(this, true);
     return true;
   }
   catch (err) {
     this.trigger('error', err, key);
+    callback && callback.call(this, false);
     return false;
   }
 });
