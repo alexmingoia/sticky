@@ -914,6 +914,9 @@ StickyStore.prototype.unserialize = (function(serialized) {
         this.trigger('error', err, serialized);
       }
     }
+    else if (isNaN(serialized) === false) {
+      item = Number(serialized);
+    }
     else {
       item = serialized;
     }
