@@ -357,7 +357,11 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
   }
 
   // Method to create objectStore
-  var createObjectStore = function() {
+  var createObjectStore = function(event) {
+    // FF is event.target.result, Chrome is event.target.result.db
+    if (!store.adapters.indexedDB.io && event.target.result) {
+      store.adapters.indexedDB.io = (event.target.result.db) ? event.target.result.db : event.target.result
+    }
     if (!store.adapters.indexedDB.io.objectStoreNames.contains(store.options.name)) {
       store.adapters.indexedDB.io.createObjectStore(store.options.name, {keyPath: 'key'});
     }
@@ -369,7 +373,7 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
 
     request.onsuccess = function(event) {
       // FF is event.target.result, Chrome is event.target.result.db
-      if (event.target.result) {
+      if (!store.adapters.indexedDB.io && event.target.result) {
         store.adapters.indexedDB.io = (event.target.result.db) ? event.target.result.db : event.target.result
       }
       // Backwards compatibility for older indexedDB implementations before

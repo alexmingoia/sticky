@@ -2,6 +2,7 @@
 
 ## 2.6 / 2012-02-23
 
+* Ensure compatibility with both FF and Chrome indexedDB implementations
 * Added tests for each adapter (using Mocha framework)
 * Refactored cookie adapter methods and fixed bug with StickyStore.remove() being called twice in certain cases
 * Fixed bug with missing callback in StickyStore.adapters.localStorage.remove() causing multiple removals not to fire callback
