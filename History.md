@@ -1,8 +1,15 @@
 # Release History
 
+## 2.6 / 2012-02-23
+
+* Added tests for each adapter (using Mocha framework)
+* Refactored cookie adapter methods and fixed bug with StickyStore.remove() being called twice in certain cases
+* Fixed bug with missing callback in StickyStore.adapters.localStorage.remove() causing multiple removals not to fire callback
+* Fixed bug with number type conversion in StickyStore.serialize()
+
 ## 2.5 / 2012-02-19
 
-Fixed bug with callback not firing after all storage adapters are exhausted"[master b87b5f0] Fixed bug with callback not firing after all storage adapters are exhausted
+* Fixed bug with callback not firing after all storage adapters are exhausted
 
 ## 2.4 / 2012-02-18
 

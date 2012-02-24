@@ -6,7 +6,7 @@ Sticky persists in your preferred order to one of indexedDB, webSQL, localStorag
 
 #### Features
 
-* Tiny and fast
+* Test coverage
 * Callbacks for everything
 * Multiple stores
 * Store strings, numbers, and objects – JSON in and JSON out
@@ -34,7 +34,7 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 ### HTML:
 
-    <script src="sticky-2.5.js" type="text/javascript"></script>
+    <script src="sticky-2.6.js" type="text/javascript"></script>
 
 ### JavaScript:
 
