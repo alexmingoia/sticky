@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 2.5
+ * Version 2.6
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -97,8 +97,7 @@ function StickyStore(options) {
       }
     }
     if (ready) {
-      this.connected.push(adapter);
-      this.adapters[adapter].index = this.connected.length - 1;
+      this.adapters[adapter].index = (this.connected.push(adapter) - 1);
       if (this.connected.length === 1) {
         this.trigger('ready', this);
       }
@@ -203,7 +202,7 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
   }
 
   var result;
-  if (store.adapters[adapter].io) {
+  if (typeof store.adapters[adapter].io !== 'undefined') {
     if (async) {
       return store.adapters[adapter][op].apply(store, args);
     }
@@ -266,21 +265,36 @@ StickyStore.prototype.set = (function(key, item, callback, adapter) {
 
 StickyStore.prototype.remove = (function(key, callback, adapter) {
   var asyncHandler;
+  if (typeof callback === 'string') {
+    adapter = callback;
+    callback = null;
+  }
+  var adapters = (adapter) ? [adapter] : this.connected;
   if (callback) {
     var store = this;
     var results = 0;
     asyncHandler = function(result) {
       results++;
-      if (results === store.connected.length) {
+      if (results === adapters.length) {
         callback.call(store, true);
         store.trigger('remove', key);
       }
     };
   }
-  for (var i=0; i<this.connected.length; i++) {
-    this.adapters[this.connected[i]].remove.call(this, key, asyncHandler);
+  if (adapters.length > 1) {
+    for (var i=0; i<adapters.length; i++) {
+      if (adapters[i] === adapter) {
+        asyncHandler.call(this, true);
+      }
+      else {
+        this.adapters[adapters[i]].remove.call(this, key, asyncHandler);
+      }
+    }
+    return this.exec.call(this, 'remove', key, null, null, adapter);
   }
-  return this.exec.call(this, 'remove', key);
+  else {
+    return this.exec.call(this, 'remove', key, null, callback, adapter);
+  }
 });
 
 
@@ -288,25 +302,31 @@ StickyStore.prototype.remove = (function(key, callback, adapter) {
  * Remove All
  *
  * @param Function callback
+ * @param String adapter
  *
  * Removes all values in this store from all storage mechanisms
  */
 
-StickyStore.prototype.removeAll = (function(callback) {
+StickyStore.prototype.removeAll = (function(callback, adapter) {
   var asyncHandler;
+  if (typeof callback === 'string') {
+    adapter = callback;
+    callback = null;
+  }
+  var adapters = (adapter) ? [adapter] : this.connected;
   if (callback) {
     var store = this;
     var results = 0;
     asyncHandler = function(result) {
       results++;
-      if (results === store.connected.length) {
+      if (results === adapters.length) {
         callback.call(store, true);
         store.trigger('removeAll');
       }
     };
   }
-  for (var i=0; i<this.connected.length; i++) {
-    this.adapters[this.connected[i]].removeAll.call(this, asyncHandler);
+  for (var i=0; i<adapters.length; i++) {
+    this.adapters[adapters[i]].removeAll.call(this, asyncHandler);
   }
 });
 
@@ -329,16 +349,18 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
 
   // backwards compatibility
   if ('mozIndexedDB' in window) {
-     window.indexedDB = window.mozIndexedDB;
+    window.indexedDB = window.mozIndexedDB;
+  }
+  if ('webkitIndexedDB' in window) {
+    window.indexedDB = window.webkitIndexedDB;
+    window.IDBTransaction = window.webkitIDBTransaction;
   }
 
   // Method to create objectStore
-  var createObjectStore = function(event) {
-    store.adapters.indexedDB.io = event.target.result
+  var createObjectStore = function() {
     if (!store.adapters.indexedDB.io.objectStoreNames.contains(store.options.name)) {
       store.adapters.indexedDB.io.createObjectStore(store.options.name, {keyPath: 'key'});
     }
-    callback && callback.call(store, 'indexedDB', true);
   };
 
   if (window.indexedDB) {
@@ -346,7 +368,10 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
     var request = window.indexedDB.open(store.options.name, 20);
 
     request.onsuccess = function(event) {
-      store.adapters.indexedDB.io = event.target.result
+      // FF is event.target.result, Chrome is event.target.result.db
+      if (event.target.result) {
+        store.adapters.indexedDB.io = (event.target.result.db) ? event.target.result.db : event.target.result
+      }
       // Backwards compatibility for older indexedDB implementations before
       // IDBDatabase.setVersion() was removed.
       if (event.target.result.setVersion && event.target.result.version !== '2.0') {
@@ -440,8 +465,7 @@ StickyStore.prototype.adapters.indexedDB.set = (function(key, item, callback) {
 StickyStore.prototype.adapters.indexedDB.remove = (function(key, callback) {
   var store = this;
   var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_WRITE);
-  var objStore = tx.objectStore(store.options.name);
-  var request = objStore['delete'](key);
+  var request = tx.objectStore(store.options.name)['delete'](key);
   request.onsuccess = function(e) {
     callback && callback.call(store, true);
   };
@@ -460,7 +484,8 @@ StickyStore.prototype.adapters.indexedDB.remove = (function(key, callback) {
 
 StickyStore.prototype.adapters.indexedDB.removeAll = (function(callback) {
   var store = this;
-  var request = store.adapters.indexedDB.io.deleteDatabase(store.options.name);
+  var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_WRITE);
+  var request = tx.objectStore(store.options.name).clear();
   request.onsuccess = function(e) {
     callback && callback.call(store, true);
   };
@@ -512,17 +537,24 @@ StickyStore.prototype.adapters.webSQL.get = (function(key, callback) {
   var store = this;
   var item;
   store.adapters.webSQL.io.transaction(function(tx) {
-    tx.executeSql('SELECT * FROM ' + store.options.name + ' WHERE key=?', [key], function(tx, results) {
-      if (results.rows.length === 1) {
-        var record = results.rows.item(0);
-        item = store.unserialize(record['data']);
-        callback && callback.call(store, item);
-      }
-      else {
-        store.trigger('error', "Couldn't get webSQL webSQL item with key: " + key, key);
+    tx.executeSql(
+      'SELECT * FROM ' + store.options.name + ' WHERE key=?',
+      [key],
+      function(tx, results) {
+        if (results.rows.length === 1) {
+          var record = results.rows.item(0);
+          item = store.unserialize(record['data']);
+          callback && callback.call(store, item);
+        }
+        else {
+          callback && callback.call(store, false);
+        }
+      },
+      function(tx, error) {
+        store.trigger('error', "Couldn't get webSQL item with key: " + key, key);
         callback && callback.call(store, false);
       }
-    });
+    );
   });
 });
 
@@ -543,9 +575,9 @@ StickyStore.prototype.adapters.webSQL.set = (function(key, item, callback) {
   var value = this.serialize(item);
   var insert = function(tx, result) {
     // If update failed then insert
-    if (result && result.rowsAffected === 0) {
+    if (result.rowsAffected === 0) {
       tx.executeSql('INSERT INTO ' + store.options.name + ' (key, data) VALUES (?, ?)', [key, value], function(tx, result) {
-        if (result && result.rowsAffected === 0) {
+        if (result.rowsAffected === 0) {
           store.trigger('error', 'Failed to insert webSQL item', item);
           callback && callback.call(store, false);
         }
@@ -577,15 +609,22 @@ StickyStore.prototype.adapters.webSQL.set = (function(key, item, callback) {
 StickyStore.prototype.adapters.webSQL.remove = (function(key, callback) {
   var store = this;
   store.adapters.webSQL.io.transaction(function(tx) {
-    tx.executeSql('DELETE FROM ' + store.options.name + ' WHERE key=?', [key], function(tx, result) {;
-      if (result && result.rowsAffected === 0) {
+    tx.executeSql(
+      'DELETE FROM ' + store.options.name + ' WHERE key=?',
+      [key],
+      function(tx, result) {;
+        if (result.rowsAffected === 0) {
+          callback && callback.call(store, false);
+        }
+        else {
+          callback && callback.call(store, true);
+        }
+      },
+      function(tx, error) {
         callback && callback.call(store, false);
         store.trigger('error', 'Failed to delete webSQL item', key);
       }
-      else {
-        callback && callback.call(store, true);
-      }
-    });
+    );
   });
 });
 
@@ -600,10 +639,14 @@ StickyStore.prototype.adapters.webSQL.removeAll = (function(callback) {
   var store = this;
   store.adapters.webSQL.io.transaction(function(tx) {
     tx.executeSql(
-      'DROP TABLE ' + store.options.name,
-      [],
-      function(tx) {;
-        callback && callback.call(store, true);
+      'DELETE FROM ' + store.options.name, [],
+      function(tx, result) {;
+        if (result.rowsAffected === 0) {
+          callback && callback.call(store, false);
+        }
+        else {
+          callback && callback.call(store, true);
+        }
       },
       function(tx, error) {
         callback && callback.call(store, false);
@@ -725,11 +768,15 @@ StickyStore.prototype.adapters.localStorage.remove = (function(key, callback) {
 StickyStore.prototype.adapters.localStorage.removeAll = (function(callback) {
   // Loop through each item in localStorage and remove ones that match
   // this store.
+  var keys = [];
   for (var i=0; i<this.adapters.localStorage.io.length; i++) {
     var key = this.adapters.localStorage.io.key(i);
     if (key.indexOf(this.options.name) === 0) {
-      this.adapters.localStorage.io.removeItem(key);
+      keys.push(key);
     }
+  }
+  for (var i=0; i<keys.length; i++) {
+    this.adapters.localStorage.io.removeItem(keys[i]);
   }
   callback && callback.call(this, true);
   return true;
@@ -743,7 +790,7 @@ StickyStore.prototype.adapters.localStorage.removeAll = (function(callback) {
  */
 
 StickyStore.prototype.adapters.cookie.init = (function(callback) {
-  if (document.cookie) {
+  if (typeof document.cookie === 'string') {
     this.adapters.cookie.io = document.cookie;
     callback && callback.call(this, 'cookie', true);
   }
@@ -765,23 +812,18 @@ StickyStore.prototype.adapters.cookie.init = (function(callback) {
 
 StickyStore.prototype.adapters.cookie.get = (function(key, callback) {
   var item;
+  key = this.options.name + '_' + key;
   if (key.search(/\W/i) === -1) {
-    var keyEquals = this.options.name + '_' + key + '=';
-    var cookieArray = this.adapters.cookie.io.split(';');
-    for (var i=0; i<cookieArray.length; i++) {
-      var cookie = cookieArray[i];
-      while (cookie.charAt(0) === ' ') {
-        cookie = cookie.substring(1, cookie.length);
-      }
-      if (cookie.indexOf(keyEquals) === 0) {
-        item = this.unserialize(cookie.substring(keyEquals.length, cookie.length));
-      }
+    var match = document.cookie.match((new RegExp(key +'=[a-zA-Z0-9.()=|%/]+($|;)','g')));
+    if (match && match[0]) {
+      item = unescape(match[0].substring(key.length+1,match[0].length).replace(';','')) || null;
     }
   }
   else {
     this.trigger('error', 'Key cannot contain special characters when persisting to cookies. Only A-z, 0-9, and _ are allowed.', key);
   }
   if (item) {
+    item = this.unserialize(item);
     callback && callback.call(this, item);
     return item;
   }
@@ -808,15 +850,24 @@ StickyStore.prototype.adapters.cookie.set = (function(key, item, callback) {
   if (((value.length + key.length) - 100) > 4000) {
     this.trigger('error', 'Serialized value too large for cookie storage', key);
   }
-  else if (key.search(/\W/i) === -1) {
-    document.cookie = this.options.name + '_' + key + '=' + value
-      + '; expires=' + new Date(new Date().getTime() + this.options.expires).toGMTString()
-      + '; path=/';
-    callback && callback.call(this, item);
-    return item;
+  else if (key.search(/\W/i) !== -1) {
+    this.trigger('error', 'Key cannot contain special characters when persisting to cookies. Only A-z, 0-9, and _ are allowed.', key);
+  }
+  else if (value.search(/[;,=[ ]/i) !== -1) {
+    this.trigger('error', 'Value cannot contain spaces, semi-colons, equals, or commas when persisting to cookies.', key);
   }
   else {
-    this.trigger('error', 'Key cannot contain special characters when persisting to cookies. Only A-z, 0-9, and _ are allowed.', key);
+    key = this.options.name + '_' + key;
+    var date = new Date();
+    date.setTime(date.getTime()+this.options.expires);
+    var cookie = [
+      key+'='+value,
+      'path=/',
+      'expires='+date.toGMTString()
+    ];
+    document.cookie = cookie.join('; ');
+    callback && callback.call(this, item);
+    return item;
   }
   callback && callback.call(this, false);
   return false;
@@ -833,13 +884,19 @@ StickyStore.prototype.adapters.cookie.set = (function(key, item, callback) {
  */
 
 StickyStore.prototype.adapters.cookie.remove = (function(key, callback) {
-  try {
-    document.cookie = this.options.name + '_' + key + '=; expires=-1; path=/';
+  var cookieExists = this.adapters.cookie.get.call(this, key);
+  if (cookieExists) {
+    key = this.options.name + '_' + key;
+    var cookie = [
+      key+'=',
+      'path=/',
+      'expires=Thu, 01-Jan-70 00:00:01 GMT'
+    ];
+    document.cookie = cookie.join('; ');
     callback && callback.call(this, true);
     return true;
   }
-  catch (err) {
-    this.trigger('error', err, key);
+  else {
     callback && callback.call(this, false);
     return false;
   }
@@ -855,11 +912,11 @@ StickyStore.prototype.adapters.cookie.remove = (function(key, callback) {
  */
 
 StickyStore.prototype.adapters.cookie.removeAll = (function(callback) {
-  var cookies = this.adapters.cookie.io.split(';');
+  var cookies = document.cookie.split(';');
   for (var i=0; i<cookies.length; i++) {
     var key = cookies[i].split('=')[0];
     if (key.indexOf(this.options.name) === 0) {
-      this.remove.call(this, key, 'cookie');
+      this.adapters.cookie.remove.call(this, key.replace(this.options.name + '_', ''));
     }
   }
   callback && callback.call(this, true);
@@ -875,14 +932,13 @@ StickyStore.prototype.adapters.cookie.removeAll = (function(callback) {
  */
 
 StickyStore.prototype.serialize = (function(item) {
-  var itemType = typeof item;
   var serialized;
   // Objects and arrays are stringified
-  if (itemType === 'string' && item.length > 0) {
+  if (typeof item === 'string' && item.length > 0) {
     serialized = item;
   }
   else {
-    if (itemType === 'object' || itemType === 'array') {
+    if (typeof item === 'object' || item.constructor === Array) {
       try {
         serialized = 'J::O' + JSON.stringify(item);
       }
