@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 2.7
+ * Version 2.8
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -461,6 +461,9 @@ StickyStore.prototype.adapters.indexedDB.get = (function(key, callback) {
   request.onsuccess = function(event) {
     if (event.target.result) {
       callback && callback.call(store, event.target.result.data);
+    }
+    else {
+      callback && callback.call(store, false);
     }
   };
   request.onerror = function(event) {
