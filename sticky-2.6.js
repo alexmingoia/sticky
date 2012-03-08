@@ -458,12 +458,10 @@ StickyStore.prototype.adapters.indexedDB.get = (function(key, callback) {
   var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_ONLY);
   var objStore = tx.objectStore(store.options.name);
   var request = objStore.get(key);
-  var item = false;
   request.onsuccess = function(event) {
     if (event.target.result) {
-      item = store.unserialize(event.target.result.data);
+      callback && callback.call(store, event.target.result.data);
     }
-    callback && callback.call(store, item);
   };
   request.onerror = function(event) {
     store.trigger('error', "Couldn't get item from indexedDB objectStore (Code " + request.errorCode + ")");
@@ -485,10 +483,9 @@ StickyStore.prototype.adapters.indexedDB.get = (function(key, callback) {
 
 StickyStore.prototype.adapters.indexedDB.set = (function(key, item, callback) {
   var store = this;
-  var value = this.serialize(item);
   var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_WRITE);
   var objStore = tx.objectStore(store.options.name);
-  var request = objStore.put({'key': key, 'data': value});
+  var request = objStore.put({'key': key, 'data': item});
   request.onsuccess = function(e) {
     callback && callback.call(store, item);
   };
