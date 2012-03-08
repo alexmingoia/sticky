@@ -34,7 +34,7 @@ For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
 ### HTML:
 
-    <script src="sticky-2.6.js" type="text/javascript"></script>
+    <script src="sticky-2.7.js" type="text/javascript"></script>
 
 ### JavaScript:
 
@@ -92,8 +92,8 @@ If the preferred available adapter is asynchronous, you must use callbacks as `S
 
 ##### Parameters
 
-`key` *String*  
-`callback` The callback's first argument's value will be the stored item, or false on failure. *Mixed (Optional)*  
+`key` *String/Array*  Key or array of keys
+`callback` The callback's first argument's value will be the stored item or array of items, or false on failure. *Mixed (Optional)*  
 `adapter` The storage adapter to use. *String (Optional)*
 
 ##### Returns
@@ -116,9 +116,9 @@ Stores an item and returns the stored item or false on failure. You can pass any
 
 ##### Parameters
 
-`key` *String*  
-`item` *Mixed*  
-`callback` The callback's first argument's value will be the stored item, or false on failure. *Mixed (Optional)*  
+`key` *String/Array*  Key or array of keys
+`item` *Mixed/Array*  Item or array of items
+`callback` The callback's first argument's value will be the stored item or array of items, or false on failure. *Mixed (Optional)*  
 
 `adapter` The adapter to use. *String (Optional)*
 

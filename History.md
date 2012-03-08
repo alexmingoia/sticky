@@ -1,5 +1,11 @@
 # Release History
 
+# 2.7 / 2012-03-07
+
+* Improved get and set methods by handling array of keys/items.
+* Removed redundant serialization in indexedDB adapter's get and set
+  methods.
+
 ## 2.6 / 2012-02-23
 
 * Ensure compatibility with both FF and Chrome indexedDB implementations
