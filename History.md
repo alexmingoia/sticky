@@ -1,5 +1,9 @@
 # Release History
 
+# 2.8 / 2012-03-08
+
+* Fix issue where indexedDB adapter's get method didn't execute callback when lookup is successful but result is empty.
+
 # 2.7 / 2012-03-07
 
 * Improved get and set methods by handling array of keys/items.
