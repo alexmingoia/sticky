@@ -221,7 +221,7 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
 /**
  * Get
  *
- * @param String key
+ * @param String/Array key Key or array of keys for retrieval
  * @param Function callback Optional. Called after async operations are completed
  * with the stored item or false as the first argument.
  * @param String adapter The adapter to use.
@@ -230,6 +230,26 @@ StickyStore.prototype.exec = (function(op, key, item, callback, adapter) {
  */
 
 StickyStore.prototype.get = (function(key, callback, adapter) {
+  if (key.constructor === Array) {
+    var asyncHandler;
+    var keys = key;
+    if (callback) {
+      var store = this;
+      var asyncResults = [];
+      asyncHandler = function(result) {
+        asyncResults.push(result);
+        if (asyncResults.length === keys.length) {
+          callback.call(store, asyncResults);
+          store.trigger('get', keys);
+        }
+      };
+    }
+    var results = [];
+    for (var i=0; i<keys.length; i++) {
+      results.push(this.exec.call(this, 'get', keys[i], null, asyncHandler, adapter));
+    }
+    return results;
+  }
   return this.exec.call(this, 'get', key, null, callback, adapter);
 });
 
@@ -237,8 +257,8 @@ StickyStore.prototype.get = (function(key, callback, adapter) {
 /**
  * Set
  *
- * @param String key
- * @param Mixed item
+ * @param String/Array key Key or array of keys for retrieval
+ * @param Mixed/Array item Item or array of items to store
  * @param Function callback Optional. Called after async operations are completed
  * with the stored item or false as the first argument.
  * @param String adapter The adapter to use.
@@ -248,6 +268,27 @@ StickyStore.prototype.get = (function(key, callback, adapter) {
 
 StickyStore.prototype.set = (function(key, item, callback, adapter) {
   if (!item) return false;
+  if (key.constructor === Array && item.constructor === Array) {
+    var asyncHandler;
+    var keys = key;
+    var items = item;
+    if (callback) {
+      var store = this;
+      var asyncResults = [];
+      asyncHandler = function(result) {
+        asyncResults.push(result);
+        if (asyncResults.length === keys.length) {
+          callback.call(store, asyncResults);
+          store.trigger('set', keys, results);
+        }
+      };
+    }
+    var results = [];
+    for (var i=0; i<keys.length; i++) {
+      results.push(this.exec.call(this, 'set', keys[i], items[i], asyncHandler, adapter));
+    }
+    return results;
+  }
   return this.exec.call(this, 'set', key, item, callback, adapter);
 });
 
