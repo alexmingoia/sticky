@@ -388,13 +388,9 @@ StickyStore.prototype.adapters = {'indexedDB':{}, 'webSQL':{}, 'localStorage':{}
 StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
   var store = this;
 
-  // backwards compatibility
-  if ('mozIndexedDB' in window) {
-    window.indexedDB = window.mozIndexedDB;
-  }
-  if ('webkitIndexedDB' in window) {
-    window.indexedDB = window.webkitIndexedDB;
-    window.IDBTransaction = window.webkitIDBTransaction;
+  if (window) {
+      StickyStore.prototype.IndexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+      StickyStore.prototype.IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.mozIDBTransaction || window.msIDBTransaction;
   }
 
   // Method to create objectStore
@@ -408,9 +404,9 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
     }
   };
 
-  if (window.indexedDB) {
+  if (StickyStore.prototype.IndexedDB) {
     // Request to open database
-    var request = window.indexedDB.open(store.options.name, 20);
+    var request = StickyStore.prototype.IndexedDB.open(store.options.name, 20);
 
     request.onsuccess = function(event) {
       // FF is event.target.result, Chrome is event.target.result.db
@@ -455,7 +451,7 @@ StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
 
 StickyStore.prototype.adapters.indexedDB.get = (function(key, callback) {
   var store = this;
-  var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_ONLY);
+  var tx = store.adapters.indexedDB.io.transaction([store.options.name], StickyStore.prototype.IDBTransaction.READ_ONLY);
   var objStore = tx.objectStore(store.options.name);
   var request = objStore.get(key);
   request.onsuccess = function(event) {
@@ -486,7 +482,7 @@ StickyStore.prototype.adapters.indexedDB.get = (function(key, callback) {
 
 StickyStore.prototype.adapters.indexedDB.set = (function(key, item, callback) {
   var store = this;
-  var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_WRITE);
+  var tx = store.adapters.indexedDB.io.transaction([store.options.name], StickyStore.prototype.IDBTransaction.READ_WRITE);
   var objStore = tx.objectStore(store.options.name);
   var request = objStore.put({'key': key, 'data': item});
   request.onsuccess = function(e) {
@@ -509,7 +505,7 @@ StickyStore.prototype.adapters.indexedDB.set = (function(key, item, callback) {
 
 StickyStore.prototype.adapters.indexedDB.remove = (function(key, callback) {
   var store = this;
-  var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_WRITE);
+  var tx = store.adapters.indexedDB.io.transaction([store.options.name], StickyStore.prototype.IDBTransaction.READ_WRITE);
   var request = tx.objectStore(store.options.name)['delete'](key);
   request.onsuccess = function(e) {
     callback && callback.call(store, true);
@@ -529,7 +525,7 @@ StickyStore.prototype.adapters.indexedDB.remove = (function(key, callback) {
 
 StickyStore.prototype.adapters.indexedDB.removeAll = (function(callback) {
   var store = this;
-  var tx = store.adapters.indexedDB.io.transaction([store.options.name], IDBTransaction.READ_WRITE);
+  var tx = store.adapters.indexedDB.io.transaction([store.options.name], StickyStore.prototype.IDBTransaction.READ_WRITE);
   var request = tx.objectStore(store.options.name).clear();
   request.onsuccess = function(e) {
     callback && callback.call(store, true);
