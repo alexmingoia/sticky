@@ -1,7 +1,7 @@
 /**
  * Sticky
  *
- * Version 2.8
+ * Version 2.9
  * Copyright 2011 Alexander C. Mingoia
  * MIT Licensed
  *
@@ -863,7 +863,7 @@ StickyStore.prototype.adapters.cookie.get = (function(key, callback) {
     this.trigger('error', 'Key cannot contain special characters when persisting to cookies. Only A-z, 0-9, and _ are allowed.', key);
   }
   if (item) {
-    item = this.unserialize(item);
+    item = this.unserialize(decodeURIComponent(item));
     callback && callback.call(this, item);
     return item;
   }
@@ -886,7 +886,7 @@ StickyStore.prototype.adapters.cookie.get = (function(key, callback) {
  */
 
 StickyStore.prototype.adapters.cookie.set = (function(key, item, callback) {
-  var value = this.serialize(item);
+  var value = encodeURIComponent(this.serialize(item));
   if (((value.length + key.length) - 100) > 4000) {
     this.trigger('error', 'Serialized value too large for cookie storage', key);
   }

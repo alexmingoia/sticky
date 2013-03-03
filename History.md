@@ -1,5 +1,10 @@
 # Release History
 
+# 2.9 / 2013-03-03
+
+* Fix issue with updated indexedDB spec: IDBTransaction now has mode argument
+  which takes a string, instead of the previously used prototype properties.
+
 # 2.8 / 2012-03-08
 
 * Fix issue where indexedDB adapter's get method didn't execute callback when lookup is successful but result is empty.

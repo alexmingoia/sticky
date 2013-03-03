@@ -122,11 +122,9 @@ var testIndexedDB = function() {
     });
 
     it('should remove the stored item', function(done) {
-      store.remove('TestJSONObject', function() {
-        store.get('TestJSONObject', function(result) {
-          expect(result).to.be(false);
-          done();
-        });
+      store.remove('TestJSONObject', function(result) {
+        expect(result).to.be(true);
+        done();
       });
     });
   });
@@ -152,11 +150,9 @@ var testIndexedDB = function() {
     });
 
     it ('should remove all items stored', function(done) {
-      store.removeAll(function() {
-        store.get('TestJSONObject', function(result) {
-          expect(result).to.be(false);
-          done();
-        });
+      store.removeAll(function(result) {
+        expect(result).to.be(true);
+        done();
       });
     });
   });
