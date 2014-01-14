@@ -388,8 +388,8 @@ StickyStore.prototype.adapters = {'indexedDB':{}, 'webSQL':{}, 'localStorage':{}
 StickyStore.prototype.adapters.indexedDB.init = (function(callback) {
   var store = this;
 
-  if (window) {
-      StickyStore.prototype.IndexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+  if (window) {
+      StickyStore.prototype.IndexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
   }
 
   // Method to create objectStore
