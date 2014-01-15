@@ -267,7 +267,7 @@ StickyStore.prototype.get = (function(key, callback, adapter) {
  */
 
 StickyStore.prototype.set = (function(key, item, callback, adapter) {
-  if (!item) return false;
+  if (item === undefined || item === null) return false;
   if (key.constructor === Array && item.constructor === Array) {
     var asyncHandler;
     var keys = key;
