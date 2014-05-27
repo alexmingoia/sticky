@@ -1,5 +1,10 @@
 # Release History
 
+# 2.10 / 2014-05-27
+
+* Allow falsy values to be saved (empty string and number 0).
+* Fix expect.js URL in browser tests.
+
 # 2.9 / 2013-03-03
 
 * Fix issue with updated indexedDB spec: IDBTransaction now has mode argument
