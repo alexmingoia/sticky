@@ -1,0 +1,21 @@
+{
+  "name": "Sticky",
+  "version": "2.10.0",
+  "homepage": "https://github.com/alexmingoia/sticky",
+  "description": "Simple, key/value pair browser-storage cache leveraging the latest HTML5 storage APIs.",
+  "main": "sticky.js",
+  "keywords": [
+    "indexedDB",
+    "webSQL",
+    "localStorage",
+    "globalStorage",
+    "cookies",
+    "html5",
+    "storage"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "*.md",
+    "test"
+  ]
+}
