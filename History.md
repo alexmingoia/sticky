@@ -1,5 +1,9 @@
 # Release History
 
+# 2.11 / 2014-06-22
+
+* Publish to bower package registry.
+
 # 2.10 / 2014-05-27
 
 * Allow falsy values to be saved (empty string and number 0).

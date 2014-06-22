@@ -30,6 +30,12 @@ Usually 4KB+ per domain.
 
 For more compatibility information, see: [caniuse.com](http://caniuse.com/).
 
+## Installation
+
+```sh
+bower install sticky-store
+```
+
 ## Getting Started
 
 ### HTML:
