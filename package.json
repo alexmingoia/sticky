@@ -1,0 +1,50 @@
+{
+  "name": "sticky",
+  "version": "3.0.0",
+  "description": "Simple cross-browser key/value store.",
+  "main": "lib/sticky.js",
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "test": "./node_modules/gulp/bin/gulp.js test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexmingoia/sticky.git"
+  },
+  "devDependencies": {
+    "browserify": "^8.1.0",
+    "chai": "^1.10.0",
+    "gulp": "^3.8.10",
+    "gulp-help": "^1.3.1",
+    "gulp-clean": "^0.3.1",
+    "gulp-jscs": "^1.4.0",
+    "gulp-jshint": "^1.9.0",
+    "gulp-mocha-phantomjs": "^0.5.3",
+    "jshint-stylish": "^1.0.0",
+    "phantomjs": "^1.9.13",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.0.0"
+  },
+  "keywords": [
+    "indexedDB",
+    "webSQL",
+    "localStorage",
+    "globalStorage",
+    "cookies",
+    "html5",
+    "storage",
+    "cache"
+  ],
+  "author": "Alex Mingoia",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alexmingoia/sticky/issues"
+  },
+  "homepage": "https://github.com/alexmingoia/sticky",
+  "dependencies": {
+    "timestring": "^1.1.0"
+  }
+}
